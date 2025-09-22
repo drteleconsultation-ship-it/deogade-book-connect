@@ -62,10 +62,10 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!booking.date || !booking.timeSlot) {
+    if (!booking.date || !booking.timeSlot || !booking.name || !booking.age || !booking.gender || !booking.whatsapp || !booking.email || !booking.reason) {
       toast({
         title: "Missing Information",
-        description: "Please select both date and time for your appointment.",
+        description: "Please fill in all required fields and select both date and time for your appointment.",
         variant: "destructive",
       });
       return;
@@ -74,12 +74,35 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     setIsSubmitting(true);
 
     try {
-      // Simulate email sending (in real implementation, this would be an API call)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call the Supabase Edge Function to send confirmation emails
+      const response = await fetch('https://dgnwrghklgpnocyynqem.supabase.co/functions/v1/send-booking-confirmation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: booking.name,
+          age: booking.age,
+          gender: booking.gender,
+          whatsapp: booking.whatsapp,
+          email: booking.email,
+          reason: booking.reason,
+          consultationType: booking.consultationType,
+          date: format(booking.date, 'PPP'),
+          timeSlot: booking.timeSlot,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send confirmation emails');
+      }
+
+      const result = await response.json();
+      console.log('Email confirmation result:', result);
       
       toast({
         title: "Appointment Booked Successfully! ✅",
-        description: `Your ${booking.consultationType} consultation is scheduled for ${format(booking.date, 'PPP')} at ${booking.timeSlot}. Confirmation emails have been sent.`,
+        description: `Your ${booking.consultationType} consultation is scheduled for ${format(booking.date, 'PPP')} at ${booking.timeSlot}. Confirmation emails have been sent to you and our clinic.`,
       });
 
       // Reset form
@@ -97,9 +120,10 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       
       onClose();
     } catch (error) {
+      console.error('Booking error:', error);
       toast({
         title: "Booking Failed",
-        description: "There was an error processing your appointment. Please try again.",
+        description: "There was an error processing your appointment. Please try again or contact us directly via WhatsApp.",
         variant: "destructive",
       });
     } finally {
