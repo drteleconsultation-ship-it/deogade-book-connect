@@ -71,6 +71,17 @@ const ChargesSection: React.FC = () => {
               </Card>
             ))}
           </div>
+
+          <div className="text-center mt-12">
+            <div className="bg-card border border-border rounded-lg p-6 max-w-2xl mx-auto">
+              <p className="text-lg font-semibold text-primary mb-2">
+                📅 Follow-up Included
+              </p>
+              <p className="text-muted-foreground">
+                All consultation includes Free follow up for 7-8 days.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
