@@ -9,7 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar as CalendarIcon, Clock, CheckCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, CheckCircle, CreditCard, ArrowLeft, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -26,9 +26,25 @@ interface BookingData {
   email: string;
   reason: string;
   consultationType: 'online' | 'clinic';
+  serviceType: string;
   date: Date | undefined;
   timeSlot: string;
 }
+
+interface ServiceType {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+}
+
+const services: ServiceType[] = [
+  { id: 'general', name: 'General Physician', price: 150, description: 'Comprehensive general medical consultation' },
+  { id: 'gynecology', name: 'Gynecology (Women\'s issues)', price: 200, description: 'Specialized women\'s health consultation' },
+  { id: 'dermatology', name: 'Dermatology (Skin & Hair)', price: 200, description: 'Expert skin and hair care consultation' },
+  { id: 'psychiatric', name: 'Psychiatric Counselling', price: 300, description: 'Professional mental health counseling' },
+  { id: 'certificate', name: 'Medical / Fitness Certificate', price: 225, description: 'Official medical certificates' }
+];
 
 // Generate time slots based on consultation type
 const generateTimeSlots = (consultationType: 'online' | 'clinic') => {
@@ -56,6 +72,7 @@ const generateTimeSlots = (consultationType: 'online' | 'clinic') => {
 
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const { toast } = useToast();
+  const [currentStep, setCurrentStep] = useState<'form' | 'payment' | 'confirmation'>('form');
   const [booking, setBooking] = useState<BookingData>({
     name: '',
     age: '',
@@ -64,20 +81,50 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     email: '',
     reason: '',
     consultationType: 'clinic',
+    serviceType: '',
     date: undefined,
     timeSlot: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
   const timeSlots = generateTimeSlots(booking.consultationType);
+  const selectedService = services.find(s => s.id === booking.serviceType);
+  const amount = selectedService?.price || 0;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const generateUPILink = () => {
+    const upiId = '7415379845@okbizaxis';
+    const transactionNote = `${selectedService?.name} - ${booking.name}`;
+    const transactionId = `CLINIC_${Date.now()}`;
+    
+    return `upi://pay?pa=${upiId}&pn=Medical Clinic&tn=${encodeURIComponent(transactionNote)}&am=${amount}&cu=INR&tid=${transactionId}`;
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!booking.date || !booking.timeSlot || !booking.name || !booking.age || !booking.gender || !booking.whatsapp || !booking.email || !booking.reason) {
+    if (!booking.date || !booking.timeSlot || !booking.name || !booking.age || !booking.gender || !booking.whatsapp || !booking.email || !booking.reason || !booking.serviceType) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields and select both date and time for your appointment.",
+        description: "Please fill in all required fields including service type, date and time.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCurrentStep('payment');
+  };
+
+  const handlePaymentConfirmation = () => {
+    setPaymentConfirmed(true);
+    setCurrentStep('confirmation');
+  };
+
+  const handleFinalSubmit = async () => {
+    if (!paymentConfirmed) {
+      toast({
+        title: "Payment Required",
+        description: "Please complete the payment before confirming your appointment.",
         variant: "destructive",
       });
       return;
@@ -100,7 +147,9 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           email: booking.email,
           reason: booking.reason,
           consultationType: booking.consultationType,
-          date: format(booking.date, 'PPP'),
+          serviceType: selectedService?.name || '',
+          amount: amount,
+          date: format(booking.date!, 'PPP'),
           timeSlot: booking.timeSlot,
         }),
       });
@@ -114,7 +163,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       
       toast({
         title: "Appointment Booked Successfully! ✅",
-        description: `Your ${booking.consultationType} consultation is scheduled for ${format(booking.date, 'PPP')} at ${booking.timeSlot}. Confirmation emails have been sent to you and our clinic.`,
+        description: `Your ${booking.consultationType} consultation is scheduled for ${format(booking.date!, 'PPP')} at ${booking.timeSlot}. Confirmation emails have been sent.`,
       });
 
       // Reset form
@@ -126,9 +175,12 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         email: '',
         reason: '',
         consultationType: 'clinic',
+        serviceType: '',
         date: undefined,
         timeSlot: '',
       });
+      setCurrentStep('form');
+      setPaymentConfirmed(false);
       
       onClose();
     } catch (error) {
@@ -143,187 +195,342 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const renderFormStep = () => (
+    <form onSubmit={handleFormSubmit} className="space-y-6">
+      {/* Service Type Selection */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">Service Type *</Label>
+        <Select onValueChange={(value) => setBooking({ ...booking, serviceType: value })}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select consultation service" />
+          </SelectTrigger>
+          <SelectContent>
+            {services.map((service) => (
+              <SelectItem key={service.id} value={service.id}>
+                <div className="flex justify-between items-center w-full">
+                  <span>{service.name}</span>
+                  <span className="font-semibold text-primary ml-4">₹{service.price}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {selectedService && (
+          <p className="text-sm text-muted-foreground">{selectedService.description}</p>
+        )}
+      </div>
+
+      {/* Consultation Type */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">Consultation Type</Label>
+        <RadioGroup
+          value={booking.consultationType}
+          onValueChange={(value: 'online' | 'clinic') => 
+            setBooking({ ...booking, consultationType: value, timeSlot: '' })
+          }
+          className="flex gap-6"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="clinic" id="clinic" />
+            <Label htmlFor="clinic">In-Clinic Visit</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="online" id="online" />
+            <Label htmlFor="online">Online Consultation</Label>
+          </div>
+        </RadioGroup>
+      </div>
+
+      {/* Personal Information */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Full Name *</Label>
+          <Input
+            id="name"
+            value={booking.name}
+            onChange={(e) => setBooking({ ...booking, name: e.target.value })}
+            required
+            placeholder="Enter your full name"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="age">Age *</Label>
+          <Input
+            id="age"
+            type="number"
+            value={booking.age}
+            onChange={(e) => setBooking({ ...booking, age: e.target.value })}
+            required
+            placeholder="Enter your age"
+            min="1"
+            max="120"
+          />
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="gender">Gender *</Label>
+          <Select onValueChange={(value) => setBooking({ ...booking, gender: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select gender" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="male">Male</SelectItem>
+              <SelectItem value="female">Female</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="whatsapp">WhatsApp Number *</Label>
+          <Input
+            id="whatsapp"
+            value={booking.whatsapp}
+            onChange={(e) => setBooking({ ...booking, whatsapp: e.target.value })}
+            required
+            placeholder="+91 XXXXXXXXXX"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="email">Email Address *</Label>
+        <Input
+          id="email"
+          type="email"
+          value={booking.email}
+          onChange={(e) => setBooking({ ...booking, email: e.target.value })}
+          required
+          placeholder="your.email@example.com"
+        />
+      </div>
+
+      {/* Date and Time Selection */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Appointment Date *</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !booking.date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {booking.date ? format(booking.date, "PPP") : "Select date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={booking.date}
+                onSelect={(date) => setBooking({ ...booking, date })}
+                disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        <div className="space-y-2">
+          <Label>Time Slot *</Label>
+          <Select onValueChange={(value) => setBooking({ ...booking, timeSlot: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select time" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              {timeSlots.map((time) => (
+                <SelectItem key={time} value={time}>
+                  <Clock className="inline mr-2 h-4 w-4" />
+                  {time}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="reason">Reason for Consultation *</Label>
+        <Textarea
+          id="reason"
+          value={booking.reason}
+          onChange={(e) => setBooking({ ...booking, reason: e.target.value })}
+          required
+          placeholder="Please describe your symptoms or reason for consultation..."
+          rows={3}
+        />
+      </div>
+
+      <div className="flex gap-3 pt-4">
+        <Button type="submit" className="flex-1" variant="medical">
+          <CreditCard className="h-4 w-4 mr-2" />
+          Proceed to Payment
+        </Button>
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+
+  const renderPaymentStep = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h3 className="text-2xl font-bold text-primary mb-4">Payment Details</h3>
+        <div className="bg-muted/50 rounded-lg p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-lg">Service:</span>
+            <span className="font-semibold">{selectedService?.name}</span>
+          </div>
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-lg">Amount:</span>
+            <span className="text-2xl font-bold text-primary">₹{amount}</span>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Includes free follow-up for 7-8 days
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-card border border-border rounded-lg p-6">
+        <h4 className="text-lg font-semibold mb-4 text-center">Pay via UPI</h4>
+        <div className="space-y-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-4">
+              UPI ID: <span className="font-mono font-semibold">7415379845@okbizaxis</span>
+            </p>
+            
+            <Button 
+              className="w-full mb-4" 
+              variant="medical"
+              onClick={() => window.open(generateUPILink(), '_blank')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Pay ₹{amount} via UPI
+            </Button>
+            
+            <p className="text-xs text-muted-foreground mb-4">
+              Click above to open your UPI app and complete the payment
+            </p>
+          </div>
+          
+          <div className="border-t pt-4">
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              After completing payment, click below to confirm
+            </p>
+            <Button 
+              onClick={handlePaymentConfirmation}
+              className="w-full"
+              variant="outline"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              I have completed the payment
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={() => setCurrentStep('form')}
+          className="flex-1"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Form
+        </Button>
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+
+  const renderConfirmationStep = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+        <h3 className="text-2xl font-bold text-primary mb-4">Confirm Your Appointment</h3>
+      </div>
+
+      <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div><strong>Service:</strong></div>
+          <div>{selectedService?.name}</div>
+          
+          <div><strong>Type:</strong></div>
+          <div className="capitalize">{booking.consultationType}</div>
+          
+          <div><strong>Date:</strong></div>
+          <div>{booking.date && format(booking.date, 'PPP')}</div>
+          
+          <div><strong>Time:</strong></div>
+          <div>{booking.timeSlot}</div>
+          
+          <div><strong>Amount Paid:</strong></div>
+          <div className="font-semibold text-primary">₹{amount}</div>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <Button
+          onClick={handleFinalSubmit}
+          disabled={isSubmitting}
+          className="flex-1"
+          variant="medical"
+        >
+          {isSubmitting ? (
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Confirming...
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Confirm Appointment
+            </div>
+          )}
+        </Button>
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={() => setCurrentStep('payment')}
+          disabled={isSubmitting}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+      </div>
+    </div>
+  );
+
+  const handleModalClose = () => {
+    setCurrentStep('form');
+    setPaymentConfirmed(false);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleModalClose}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
             <CalendarIcon className="h-6 w-6" />
-            Book Your Appointment
+            {currentStep === 'form' && 'Book Your Appointment'}
+            {currentStep === 'payment' && 'Payment'}
+            {currentStep === 'confirmation' && 'Confirm Booking'}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Consultation Type */}
-          <div className="space-y-3">
-            <Label className="text-base font-semibold">Consultation Type</Label>
-            <RadioGroup
-              value={booking.consultationType}
-              onValueChange={(value: 'online' | 'clinic') => 
-                setBooking({ ...booking, consultationType: value, timeSlot: '' })
-              }
-              className="flex gap-6"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="clinic" id="clinic" />
-                <Label htmlFor="clinic">In-Clinic Visit</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="online" id="online" />
-                <Label htmlFor="online">Online Consultation</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          {/* Personal Information */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name *</Label>
-              <Input
-                id="name"
-                value={booking.name}
-                onChange={(e) => setBooking({ ...booking, name: e.target.value })}
-                required
-                placeholder="Enter your full name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="age">Age *</Label>
-              <Input
-                id="age"
-                type="number"
-                value={booking.age}
-                onChange={(e) => setBooking({ ...booking, age: e.target.value })}
-                required
-                placeholder="Enter your age"
-                min="1"
-                max="120"
-              />
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="gender">Gender *</Label>
-              <Select onValueChange={(value) => setBooking({ ...booking, gender: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="whatsapp">WhatsApp Number *</Label>
-              <Input
-                id="whatsapp"
-                value={booking.whatsapp}
-                onChange={(e) => setBooking({ ...booking, whatsapp: e.target.value })}
-                required
-                placeholder="+91 XXXXXXXXXX"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address *</Label>
-            <Input
-              id="email"
-              type="email"
-              value={booking.email}
-              onChange={(e) => setBooking({ ...booking, email: e.target.value })}
-              required
-              placeholder="your.email@example.com"
-            />
-          </div>
-
-          {/* Date and Time Selection */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Appointment Date *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !booking.date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {booking.date ? format(booking.date, "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={booking.date}
-                    onSelect={(date) => setBooking({ ...booking, date })}
-                    disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Time Slot *</Label>
-              <Select onValueChange={(value) => setBooking({ ...booking, timeSlot: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select time" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {timeSlots.map((time) => (
-                    <SelectItem key={time} value={time}>
-                      <Clock className="inline mr-2 h-4 w-4" />
-                      {time}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="reason">Reason for Consultation *</Label>
-            <Textarea
-              id="reason"
-              value={booking.reason}
-              onChange={(e) => setBooking({ ...booking, reason: e.target.value })}
-              required
-              placeholder="Please describe your symptoms or reason for consultation..."
-              rows={3}
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1"
-              variant="medical"
-            >
-              {isSubmitting ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Booking...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4" />
-                  Confirm Appointment
-                </div>
-              )}
-            </Button>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-          </div>
-        </form>
+        {currentStep === 'form' && renderFormStep()}
+        {currentStep === 'payment' && renderPaymentStep()}
+        {currentStep === 'confirmation' && renderConfirmationStep()}
       </DialogContent>
     </Dialog>
   );
