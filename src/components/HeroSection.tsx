@@ -23,9 +23,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onBookingClick }) => {
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 py-20 text-center text-white">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+          <h1 className="text-5xl md:text-7xl font-bold mb-4 leading-tight">
             Dr. Deogade Clinic
           </h1>
+          <div className="text-lg md:text-xl mb-8 opacity-95 font-medium">
+            Dr Rikki Deogade ( MBBS, CGO, CCH, CSD, CVD, Medical officer )
+          </div>
           <p className="text-xl md:text-2xl mb-8 opacity-90 leading-relaxed">
             Professional Medical Care & Teleconsultation Services
           </p>
