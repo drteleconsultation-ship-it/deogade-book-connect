@@ -1,0 +1,80 @@
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { IndianRupee, UserCheck, Heart, Sparkles, Brain, FileText } from 'lucide-react';
+
+const ChargesSection: React.FC = () => {
+  const charges = [
+    {
+      icon: UserCheck,
+      title: 'General Physician',
+      price: '₹150',
+      description: 'Comprehensive general medical consultation and treatment'
+    },
+    {
+      icon: Heart,
+      title: 'Gynecology (Women\'s issues)',
+      price: '₹200',
+      description: 'Specialized women\'s health and gynecological consultation'
+    },
+    {
+      icon: Sparkles,
+      title: 'Dermatology (Skin & Hair)',
+      price: '₹200',
+      description: 'Expert skin and hair care consultation and treatment'
+    },
+    {
+      icon: Brain,
+      title: 'Psychiatric Counselling',
+      price: '₹300',
+      description: 'Professional mental health counseling and support'
+    },
+    {
+      icon: FileText,
+      title: 'Medical / Fitness Certificate',
+      price: '₹200-250',
+      description: 'Official medical and fitness certificates (Depends on duration & Date)'
+    }
+  ];
+
+  return (
+    <section className="py-20 bg-muted/30">
+      <div className="container mx-auto px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">
+              Consultation Charges
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Transparent and affordable pricing for quality healthcare services
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {charges.map((charge, index) => (
+              <Card key={index} className="shadow-card border-none hover:shadow-medical transition-all duration-300 hover:-translate-y-1">
+                <CardHeader className="text-center pb-4">
+                  <div className="bg-medical-gradient p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <charge.icon className="h-8 w-8 text-white" />
+                  </div>
+                  <CardTitle className="text-xl text-primary">{charge.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <div className="mb-4">
+                    <span className="text-3xl font-bold text-primary flex items-center justify-center gap-1">
+                      {charge.price}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {charge.description}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default ChargesSection;
