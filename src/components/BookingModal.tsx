@@ -30,10 +30,22 @@ interface BookingData {
   timeSlot: string;
 }
 
-// Generate time slots (10-minute intervals from 9 AM to 6 PM)
-const generateTimeSlots = () => {
+// Generate time slots based on consultation type
+const generateTimeSlots = (consultationType: 'online' | 'clinic') => {
   const slots = [];
-  for (let hour = 9; hour < 18; hour++) {
+  let startHour, endHour;
+  
+  if (consultationType === 'clinic') {
+    // In-clinic: 6 PM to 9 PM
+    startHour = 18;
+    endHour = 21;
+  } else {
+    // Online: 9 AM to 10 PM
+    startHour = 9;
+    endHour = 22;
+  }
+  
+  for (let hour = startHour; hour < endHour; hour++) {
     for (let minute = 0; minute < 60; minute += 10) {
       const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
       slots.push(time);
@@ -57,7 +69,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const timeSlots = generateTimeSlots();
+  const timeSlots = generateTimeSlots(booking.consultationType);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,7 +160,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
             <RadioGroup
               value={booking.consultationType}
               onValueChange={(value: 'online' | 'clinic') => 
-                setBooking({ ...booking, consultationType: value })
+                setBooking({ ...booking, consultationType: value, timeSlot: '' })
               }
               className="flex gap-6"
             >
