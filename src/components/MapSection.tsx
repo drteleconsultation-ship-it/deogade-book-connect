@@ -2,15 +2,22 @@ import React from 'react';
 import { MapPin } from 'lucide-react';
 
 const MapSection: React.FC = () => {
-  const latitude = 21.128054480553107;
-  const longitude = 79.10368519621429;
+  const latitude = 21.1280545;
+  const longitude = 79.1036852;
   
-  // Google Maps embed URL
-  const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3720.5!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2s!5e0!3m2!1sen!2sin!4v1637123456789!5m2!1sen!2sin`;
+  // Google Maps embed URL using the provided place ID
+  const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3720.5!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bd4c1837136df49:0xc86217e441466919!2sDr+Deogade+Clinic!5e0!3m2!1sen!2sin!4v1637123456789!5m2!1sen!2sin`;
 
   const handleGetDirections = () => {
-    const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
-    window.open(directionsUrl, '_blank', 'noopener,noreferrer');
+    const directionsUrl = "https://www.google.com/maps/place/Dr+Deogade+Clinic+(MBBS,+CGO,+CCH,+CSD,+CVD,+Medical+Officer)/@21.1280595,79.1011103,17z/data=!3m1!4b1!4m6!3m5!1s0x3bd4c1837136df49:0xc86217e441466919!8m2!3d21.1280545!4d79.1036852!16s%2Fg%2F11spxjsngk?entry=ttu&g_ep=EgoyMDI1MDkyMS4wIKXMDSoASAFQAw%3D%3D";
+    
+    const link = document.createElement('a');
+    link.href = directionsUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (

@@ -3,9 +3,17 @@ import { MessageCircle } from 'lucide-react';
 
 const WhatsAppButton: React.FC = () => {
   const handleWhatsAppClick = () => {
-    const message = encodeURIComponent("Hello, I would like to enquire about an appointment at Dr Deogade Clinic");
-    const whatsappUrl = `https://wa.me/917415379845?text=${message}`;
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    const message = "Hello, I would like to enquire about an appointment at Dr Deogade Clinic";
+    const whatsappUrl = `https://wa.me/917415379845?text=${encodeURIComponent(message)}`;
+    
+    // Create a temporary link and click it to ensure it works in iframe
+    const link = document.createElement('a');
+    link.href = whatsappUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
