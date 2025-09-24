@@ -6,11 +6,11 @@ const MapSection: React.FC = () => {
   const longitude = 79.10368519621429;
   
   // Google Maps embed URL
-  const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3721.0!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjHCsDA3JzQxLjAiTiA3OcKwMDYnMTMuMyJF!5e0!3m2!1sen!2sin!4v1234567890!5m2!1sen!2sin`;
+  const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3720.5!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2s!5e0!3m2!1sen!2sin!4v1637123456789!5m2!1sen!2sin`;
 
   const handleGetDirections = () => {
     const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
-    window.open(directionsUrl, '_blank');
+    window.open(directionsUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
