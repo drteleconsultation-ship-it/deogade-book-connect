@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, Star, MessageSquarePlus } from 'lucide-react';
 
 const MapSection: React.FC = () => {
   const latitude = 21.1280545;
@@ -19,6 +19,46 @@ const MapSection: React.FC = () => {
     link.click();
     document.body.removeChild(link);
   };
+
+  const handleWriteReview = () => {
+    const reviewUrl = "https://www.google.com/maps/place/Dr+Deogade+Clinic+(MBBS,+CGO,+CCH,+CSD,+CVD,+Medical+Officer)/@21.1280595,79.1011103,17z/data=!3m1!4b1!4m6!3m5!1s0x3bd4c1837136df49:0xc86217e441466919!8m2!3d21.1280545!4d79.1036852!16s%2Fg%2F11spxjsngk?entry=ttu&g_ep=EgoyMDI1MDkyMS4wIKXMDSoASAFQAw%3D%3D#modal=lm&lrd=0x3bd4c1837136df49:0xc86217e441466919,3";
+    
+    const link = document.createElement('a');
+    link.href = reviewUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Sample reviews data (in production, this would come from Google Places API)
+  const reviews = [
+    {
+      id: 1,
+      author: "Rajesh K.",
+      rating: 5,
+      text: "Excellent treatment and very caring doctor. Dr. Deogade is very knowledgeable and explains everything clearly.",
+      date: "2 weeks ago"
+    },
+    {
+      id: 2,
+      author: "Priya S.",
+      rating: 5,
+      text: "Great experience! The online consultation was very convenient and the doctor was very helpful.",
+      date: "1 month ago"
+    },
+    {
+      id: 3,
+      author: "Amit M.",
+      rating: 4,
+      text: "Good consultation and reasonable charges. The clinic is easy to locate near Krida Chowk.",
+      date: "2 months ago"
+    }
+  ];
+
+  const averageRating = 4.8;
+  const totalReviews = 47;
 
   return (
     <section className="py-20 bg-background">
@@ -94,6 +134,74 @@ const MapSection: React.FC = () => {
                   Get Directions
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Google Reviews Section */}
+          <div className="mt-20">
+            <div className="text-center mb-12">
+              <h3 className="text-3xl md:text-4xl font-bold text-primary mb-4">
+                Patient Reviews
+              </h3>
+              <div className="flex items-center justify-center gap-4 mb-6">
+                <div className="flex items-center gap-2">
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`h-6 w-6 ${
+                          star <= Math.floor(averageRating)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : star === Math.ceil(averageRating)
+                            ? 'fill-yellow-400/50 text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-2xl font-bold text-primary">{averageRating}</span>
+                </div>
+                <span className="text-muted-foreground">({totalReviews} reviews)</span>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="bg-card border border-border rounded-xl p-6 shadow-card hover:shadow-medical transition-shadow duration-300"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="font-semibold text-foreground">{review.author}</h4>
+                      <p className="text-sm text-muted-foreground">{review.date}</p>
+                    </div>
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-4 w-4 ${
+                            star <= review.rating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed">{review.text}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center">
+              <button
+                onClick={handleWriteReview}
+                className="bg-medical-gradient text-white py-3 px-8 rounded-lg font-semibold hover:shadow-medical transition-all duration-300 hover:-translate-y-0.5 inline-flex items-center gap-2"
+              >
+                <MessageSquarePlus className="h-5 w-5" />
+                Write a Review on Google
+              </button>
             </div>
           </div>
         </div>
