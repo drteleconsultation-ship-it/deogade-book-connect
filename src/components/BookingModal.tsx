@@ -43,7 +43,8 @@ const services: ServiceType[] = [
   { id: 'gynecology', name: 'Gynecology (Women\'s issues)', price: 200, description: 'Specialized women\'s health consultation' },
   { id: 'dermatology', name: 'Dermatology (Skin & Hair)', price: 200, description: 'Expert skin and hair care consultation' },
   { id: 'psychiatric', name: 'Psychiatric Counselling', price: 300, description: 'Professional mental health counseling' },
-  { id: 'certificate', name: 'Medical / Fitness Certificate', price: 225, description: 'Official medical certificates' }
+  { id: 'certificate', name: 'Medical / Fitness Certificate', price: 200, description: 'Official medical certificates' },
+  { id: 'certificate_prescription', name: 'Medical Certificate + Prescription', price: 250, description: 'Complete medical assessment with prescription' }
 ];
 
 // Generate time slots based on consultation type
@@ -115,9 +116,71 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     setCurrentStep('payment');
   };
 
-  const handlePaymentConfirmation = () => {
+  const handlePaymentConfirmation = async () => {
     setPaymentConfirmed(true);
-    setCurrentStep('confirmation');
+    setIsSubmitting(true);
+
+    try {
+      // Auto-confirm booking after payment
+      const response = await fetch('https://dgnwrghklgpnocyynqem.supabase.co/functions/v1/send-booking-confirmation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: booking.name,
+          age: booking.age,
+          gender: booking.gender,
+          whatsapp: booking.whatsapp,
+          email: booking.email,
+          reason: booking.reason,
+          consultationType: booking.consultationType,
+          serviceType: selectedService?.name || '',
+          amount: amount,
+          date: format(booking.date!, 'PPP'),
+          timeSlot: booking.timeSlot,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send confirmation emails');
+      }
+
+      const result = await response.json();
+      console.log('Email confirmation result:', result);
+      
+      toast({
+        title: "Appointment Booked Successfully! ✅",
+        description: `Your ${booking.consultationType} consultation is scheduled for ${format(booking.date!, 'PPP')} at ${booking.timeSlot}. Confirmation emails have been sent.`,
+      });
+
+      // Reset form
+      setBooking({
+        name: '',
+        age: '',
+        gender: '',
+        whatsapp: '',
+        email: '',
+        reason: '',
+        consultationType: 'clinic',
+        serviceType: '',
+        date: undefined,
+        timeSlot: '',
+      });
+      setCurrentStep('form');
+      setPaymentConfirmed(false);
+      
+      onClose();
+    } catch (error) {
+      console.error('Booking error:', error);
+      toast({
+        title: "Booking Failed",
+        description: "There was an error processing your appointment. Please try again or contact us directly via WhatsApp.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFinalSubmit = async () => {
@@ -337,7 +400,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         </div>
         
         <div className="space-y-2">
-          <Label>Time Slot *</Label>
+          <Label>Time Slot * <span className="text-xs text-muted-foreground">(Max 2 consultations per slot)</span></Label>
           <Select onValueChange={(value) => setBooking({ ...booking, timeSlot: value })}>
             <SelectTrigger>
               <SelectValue placeholder="Select time" />
@@ -351,6 +414,9 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
               ))}
             </SelectContent>
           </Select>
+          <p className="text-xs text-muted-foreground">
+            Note: Maximum 2 consultations can be booked per time slot
+          </p>
         </div>
       </div>
 
@@ -427,9 +493,19 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
               onClick={handlePaymentConfirmation}
               className="w-full"
               variant="outline"
+              disabled={isSubmitting}
             >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              I have completed the payment
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  Confirming Appointment...
+                </div>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  I have completed the payment
+                </>
+              )}
             </Button>
           </div>
         </div>

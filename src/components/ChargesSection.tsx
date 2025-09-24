@@ -31,8 +31,14 @@ const ChargesSection: React.FC = () => {
     {
       icon: FileText,
       title: 'Medical / Fitness Certificate',
-      price: '₹200-250',
-      description: 'Official medical and fitness certificates (Depends on duration & Date)'
+      price: '₹200',
+      description: 'Official medical and fitness certificates'
+    },
+    {
+      icon: FileText,
+      title: 'Medical Certificate + Prescription',
+      price: '₹250',
+      description: 'Complete medical assessment with prescription'
     }
   ];
 
@@ -72,13 +78,22 @@ const ChargesSection: React.FC = () => {
             ))}
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-12 space-y-6">
             <div className="bg-card border border-border rounded-lg p-6 max-w-2xl mx-auto">
               <p className="text-lg font-semibold text-primary mb-2">
                 📅 Follow-up Included
               </p>
               <p className="text-muted-foreground">
                 All consultation includes Free follow up for 7-8 days.
+              </p>
+            </div>
+            
+            <div className="bg-card border border-border rounded-lg p-6 max-w-2xl mx-auto">
+              <p className="text-lg font-semibold text-primary mb-2">
+                ⏰ Waiting Time
+              </p>
+              <p className="text-muted-foreground">
+                Waiting time minimum 2 min to maximum 15 min
               </p>
             </div>
           </div>

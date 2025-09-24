@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
+import ChargesSection from '@/components/ChargesSection';
 import AboutSection from '@/components/AboutSection';
 import ServicesSection from '@/components/ServicesSection';
-import ChargesSection from '@/components/ChargesSection';
+import MapSection from '@/components/MapSection';
 import BookingModal from '@/components/BookingModal';
 import WhatsAppButton from '@/components/WhatsAppButton';
 
@@ -14,9 +15,10 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <HeroSection onBookingClick={() => setIsBookingOpen(true)} />
+      <ChargesSection />
       <AboutSection />
       <ServicesSection />
-      <ChargesSection />
+      <MapSection />
       
       <BookingModal 
         isOpen={isBookingOpen} 
