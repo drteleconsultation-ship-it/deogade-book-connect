@@ -39,6 +39,12 @@ const ChargesSection: React.FC = () => {
       title: 'Medical Certificate + Prescription',
       price: '₹250',
       description: 'Complete medical assessment with prescription'
+    },
+    {
+      icon: UserCheck,
+      title: 'Free follow up for same issue',
+      price: '₹0',
+      description: 'Complimentary follow-up consultation for the same medical issue'
     }
   ];
 

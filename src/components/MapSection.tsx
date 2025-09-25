@@ -57,8 +57,8 @@ const MapSection: React.FC = () => {
     }
   ];
 
-  const averageRating = 4.8;
-  const totalReviews = 47;
+  const averageRating = 5.0;
+  const totalReviews = 428;
 
   return (
     <section className="py-20 bg-background">
