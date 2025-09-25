@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { IndianRupee, UserCheck, Heart, Sparkles, Brain, FileText } from 'lucide-react';
+import { IndianRupee, UserCheck, Heart, Sparkles, Brain, FileText, Download } from 'lucide-react';
 
 const ChargesSection: React.FC = () => {
   const charges = [
@@ -8,37 +8,43 @@ const ChargesSection: React.FC = () => {
       icon: UserCheck,
       title: 'General Physician',
       price: '₹150',
-      description: 'Comprehensive general medical consultation and treatment'
+      description: 'Comprehensive general medical consultation and treatment',
+      pdfUrl: '/documents/general-physician.pdf'
     },
     {
       icon: Heart,
       title: 'Gynecology (Women\'s issues)',
       price: '₹200',
-      description: 'Specialized women\'s health and gynecological consultation'
+      description: 'Specialized women\'s health and gynecological consultation',
+      pdfUrl: '/documents/gynecology.pdf'
     },
     {
       icon: Sparkles,
       title: 'Dermatology (Skin & Hair)',
       price: '₹200',
-      description: 'Expert skin and hair care consultation and treatment'
+      description: 'Expert skin and hair care consultation and treatment',
+      pdfUrl: '/documents/dermatology.pdf'
     },
     {
       icon: Brain,
       title: 'Psychiatric Counselling',
       price: '₹300',
-      description: 'Professional mental health counseling and support'
+      description: 'Professional mental health counseling and support',
+      pdfUrl: '/documents/psychiatric-counselling.pdf'
     },
     {
       icon: FileText,
       title: 'Medical / Fitness Certificate',
       price: '₹200',
-      description: 'Official medical and fitness certificates'
+      description: 'Official medical and fitness certificates',
+      pdfUrl: '/documents/medical-certificate-prescription.pdf'
     },
     {
       icon: FileText,
       title: 'Medical Certificate + Prescription',
       price: '₹250',
-      description: 'Complete medical assessment with prescription'
+      description: 'Complete medical assessment with prescription',
+      pdfUrl: '/documents/medical-certificate-prescription.pdf'
     },
     {
       icon: UserCheck,
@@ -76,9 +82,19 @@ const ChargesSection: React.FC = () => {
                       {charge.price}
                     </span>
                   </div>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-4">
                     {charge.description}
                   </p>
+                  {charge.pdfUrl && (
+                    <a 
+                      href={charge.pdfUrl} 
+                      download 
+                      className="inline-flex items-center gap-2 bg-medical-gradient text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download Sample
+                    </a>
+                  )}
                 </CardContent>
               </Card>
             ))}

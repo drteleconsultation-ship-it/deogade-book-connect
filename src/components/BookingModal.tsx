@@ -9,7 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar as CalendarIcon, Clock, CheckCircle, CreditCard, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, CheckCircle, CreditCard, ArrowLeft, ExternalLink, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -36,15 +36,16 @@ interface ServiceType {
   name: string;
   price: number;
   description: string;
+  pdfUrl?: string;
 }
 
 const services: ServiceType[] = [
-  { id: 'general', name: 'General Physician', price: 150, description: 'Comprehensive general medical consultation' },
-  { id: 'gynecology', name: 'Gynecology (Women\'s issues)', price: 200, description: 'Specialized women\'s health consultation' },
-  { id: 'dermatology', name: 'Dermatology (Skin & Hair)', price: 200, description: 'Expert skin and hair care consultation' },
-  { id: 'psychiatric', name: 'Psychiatric Counselling', price: 300, description: 'Professional mental health counseling' },
-  { id: 'certificate', name: 'Medical / Fitness Certificate', price: 200, description: 'Official medical certificates' },
-  { id: 'certificate_prescription', name: 'Medical Certificate + Prescription', price: 250, description: 'Complete medical assessment with prescription' },
+  { id: 'general', name: 'General Physician', price: 150, description: 'Comprehensive general medical consultation', pdfUrl: '/documents/general-physician.pdf' },
+  { id: 'gynecology', name: 'Gynecology (Women\'s issues)', price: 200, description: 'Specialized women\'s health consultation', pdfUrl: '/documents/gynecology.pdf' },
+  { id: 'dermatology', name: 'Dermatology (Skin & Hair)', price: 200, description: 'Expert skin and hair care consultation', pdfUrl: '/documents/dermatology.pdf' },
+  { id: 'psychiatric', name: 'Psychiatric Counselling', price: 300, description: 'Professional mental health counseling', pdfUrl: '/documents/psychiatric-counselling.pdf' },
+  { id: 'certificate', name: 'Medical / Fitness Certificate', price: 200, description: 'Official medical certificates', pdfUrl: '/documents/medical-certificate-prescription.pdf' },
+  { id: 'certificate_prescription', name: 'Medical Certificate + Prescription', price: 250, description: 'Complete medical assessment with prescription', pdfUrl: '/documents/medical-certificate-prescription.pdf' },
   { id: 'followup', name: 'Free follow up for same issue', price: 0, description: 'Complimentary follow-up consultation for the same medical issue' }
 ];
 
@@ -280,7 +281,19 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           </SelectContent>
         </Select>
         {selectedService && (
-          <p className="text-sm text-muted-foreground">{selectedService.description}</p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">{selectedService.description}</p>
+            {selectedService.pdfUrl && (
+              <a 
+                href={selectedService.pdfUrl} 
+                download 
+                className="inline-flex items-center gap-2 text-primary hover:text-primary-dark text-sm font-medium transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                Download Sample
+              </a>
+            )}
+          </div>
         )}
       </div>
 
