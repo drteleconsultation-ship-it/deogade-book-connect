@@ -9,9 +9,16 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar as CalendarIcon, Clock, CheckCircle, CreditCard, ArrowLeft, ExternalLink, Download } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, CheckCircle, CreditCard, ArrowLeft, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+
+// Import background images
+import psychiatricBg from '@/assets/psychiatric-counselling-bg.jpg';
+import medicalCertificateBg from '@/assets/medical-certificate-bg.jpg';
+import generalPhysicianBg from '@/assets/general-physician-bg.jpg';
+import gynecologyBg from '@/assets/gynecology-bg.jpg';
+import dermatologyBg from '@/assets/dermatology-bg.jpg';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -36,16 +43,16 @@ interface ServiceType {
   name: string;
   price: number;
   description: string;
-  pdfUrl?: string;
+  backgroundImage?: string;
 }
 
 const services: ServiceType[] = [
-  { id: 'general', name: 'General Physician', price: 150, description: 'Comprehensive general medical consultation', pdfUrl: '/documents/general-physician.pdf' },
-  { id: 'gynecology', name: 'Gynecology (Women\'s issues)', price: 200, description: 'Specialized women\'s health consultation', pdfUrl: '/documents/gynecology.pdf' },
-  { id: 'dermatology', name: 'Dermatology (Skin & Hair)', price: 200, description: 'Expert skin and hair care consultation', pdfUrl: '/documents/dermatology.pdf' },
-  { id: 'psychiatric', name: 'Psychiatric Counselling', price: 300, description: 'Professional mental health counseling', pdfUrl: '/documents/psychiatric-counselling.pdf' },
-  { id: 'certificate', name: 'Medical / Fitness Certificate', price: 200, description: 'Official medical certificates', pdfUrl: '/documents/medical-certificate-prescription.pdf' },
-  { id: 'certificate_prescription', name: 'Medical Certificate + Prescription', price: 250, description: 'Complete medical assessment with prescription', pdfUrl: '/documents/medical-certificate-prescription.pdf' },
+  { id: 'general', name: 'General Physician', price: 150, description: 'Comprehensive general medical consultation', backgroundImage: generalPhysicianBg },
+  { id: 'gynecology', name: 'Gynecology (Women\'s issues)', price: 200, description: 'Specialized women\'s health consultation', backgroundImage: gynecologyBg },
+  { id: 'dermatology', name: 'Dermatology (Skin & Hair)', price: 200, description: 'Expert skin and hair care consultation', backgroundImage: dermatologyBg },
+  { id: 'psychiatric', name: 'Psychiatric Counselling', price: 300, description: 'Professional mental health counseling', backgroundImage: psychiatricBg },
+  { id: 'certificate', name: 'Medical / Fitness Certificate', price: 200, description: 'Official medical certificates', backgroundImage: medicalCertificateBg },
+  { id: 'certificate_prescription', name: 'Medical Certificate + Prescription', price: 250, description: 'Complete medical assessment with prescription', backgroundImage: medicalCertificateBg },
   { id: 'followup', name: 'Free follow up for same issue', price: 0, description: 'Complimentary follow-up consultation for the same medical issue' }
 ];
 
@@ -280,20 +287,19 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
             ))}
           </SelectContent>
         </Select>
-        {selectedService && (
+        {selectedService && selectedService.backgroundImage && (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">{selectedService.description}</p>
-            {selectedService.pdfUrl && (
-              <a 
-                href={selectedService.pdfUrl} 
-                download 
-                className="inline-flex items-center gap-2 text-primary hover:text-primary-dark text-sm font-medium transition-colors"
-              >
-                <Download className="h-4 w-4" />
-                Download Sample
-              </a>
-            )}
+            <div 
+              className="h-20 w-full bg-cover bg-center rounded-lg opacity-30 border"
+              style={{
+                backgroundImage: `url(${selectedService.backgroundImage})`
+              }}
+            />
           </div>
+        )}
+        {selectedService && !selectedService.backgroundImage && (
+          <p className="text-sm text-muted-foreground">{selectedService.description}</p>
         )}
       </div>
 
