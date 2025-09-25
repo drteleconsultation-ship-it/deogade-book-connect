@@ -44,7 +44,8 @@ const services: ServiceType[] = [
   { id: 'dermatology', name: 'Dermatology (Skin & Hair)', price: 200, description: 'Expert skin and hair care consultation' },
   { id: 'psychiatric', name: 'Psychiatric Counselling', price: 300, description: 'Professional mental health counseling' },
   { id: 'certificate', name: 'Medical / Fitness Certificate', price: 200, description: 'Official medical certificates' },
-  { id: 'certificate_prescription', name: 'Medical Certificate + Prescription', price: 250, description: 'Complete medical assessment with prescription' }
+  { id: 'certificate_prescription', name: 'Medical Certificate + Prescription', price: 250, description: 'Complete medical assessment with prescription' },
+  { id: 'followup', name: 'Free follow up for same issue', price: 0, description: 'Complimentary follow-up consultation for the same medical issue' }
 ];
 
 // Generate time slots based on consultation type
