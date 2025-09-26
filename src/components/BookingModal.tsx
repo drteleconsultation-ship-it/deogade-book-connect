@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Calendar as CalendarIcon, Clock, CheckCircle, CreditCard, ArrowLeft, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 // Import background images
 import psychiatricBg from '@/assets/psychiatric-counselling-bg.jpg';
@@ -131,13 +132,37 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     setIsSubmitting(true);
 
     try {
-      // Auto-confirm booking after payment
-      const response = await fetch('https://dgnwrghklgpnocyynqem.supabase.co/functions/v1/send-booking-confirmation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Save appointment to database
+      const appointmentData = {
+        patient_name: booking.name,
+        age: booking.age,
+        gender: booking.gender,
+        whatsapp: booking.whatsapp,
+        email: booking.email || null,
+        reason: booking.reason,
+        consultation_type: booking.consultationType,
+        service_type: selectedService?.name || '',
+        appointment_date: booking.date!.toISOString().split('T')[0],
+        time_slot: booking.timeSlot,
+        status: 'pending'
+      };
+
+      const { data: appointmentResult, error: dbError } = await supabase
+        .from('appointments')
+        .insert([appointmentData])
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Database error:', dbError);
+        throw new Error('Failed to save appointment to database');
+      }
+
+      console.log('Appointment saved:', appointmentResult);
+
+      // Send confirmation emails
+      const response = await supabase.functions.invoke('send-booking-confirmation', {
+        body: {
           name: booking.name,
           age: booking.age,
           gender: booking.gender,
@@ -145,23 +170,25 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           email: booking.email,
           reason: booking.reason,
           consultationType: booking.consultationType,
-          serviceType: selectedService?.name || '',
-          amount: amount,
+          serviceName: selectedService?.name || '',
+          serviceCharge: selectedService?.price || 0,
           date: format(booking.date!, 'PPP'),
           timeSlot: booking.timeSlot,
-        }),
+        },
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to send confirmation emails');
+      if (!response.error) {
+        console.log('Email confirmation sent successfully');
+      } else {
+        console.error('Email sending failed:', response.error);
+        // Don't throw error here as appointment is already saved
       }
 
-      const result = await response.json();
-      console.log('Email confirmation result:', result);
+      console.log('Email confirmation result:', response.data);
       
       toast({
         title: "Appointment Booked Successfully! ✅",
-        description: `Your ${booking.consultationType} consultation is scheduled for ${format(booking.date!, 'PPP')} at ${booking.timeSlot}. Confirmation emails have been sent.`,
+        description: `Your ${booking.consultationType} consultation is scheduled for ${format(booking.date!, 'PPP')} at ${booking.timeSlot}. ${response.error ? 'Appointment saved but email notification failed.' : 'Confirmation emails sent.'}`,
       });
 
       // Reset form
@@ -176,6 +203,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         serviceType: '',
         date: undefined,
         timeSlot: '',
+        attachments: undefined,
       });
       setCurrentStep('form');
       setPaymentConfirmed(false);
@@ -379,15 +407,32 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email">Email Address *</Label>
+        <Label htmlFor="email">Email Address (Optional)</Label>
         <Input
           id="email"
           type="email"
           value={booking.email}
           onChange={(e) => setBooking({ ...booking, email: e.target.value })}
-          required
-          placeholder="your.email@example.com"
+          placeholder="your.email@example.com (optional)"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="attachments">Medical Documents (Optional)</Label>
+        <Input
+          id="attachments"
+          type="file"
+          multiple
+          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+          onChange={(e) => {
+            const files = Array.from(e.target.files || []);
+            setBooking({ ...booking, attachments: files });
+          }}
+          className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+        />
+        <p className="text-xs text-muted-foreground">
+          Upload lab reports, medical documents, prescriptions (PDF, JPG, PNG, DOC - Max 10MB per file)
+        </p>
       </div>
 
       {/* Date and Time Selection */}

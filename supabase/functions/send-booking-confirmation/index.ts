@@ -14,9 +14,11 @@ interface BookingEmailRequest {
   age: string;
   gender: string;
   whatsapp: string;
-  email: string;
+  email?: string;
   reason: string;
   consultationType: 'online' | 'clinic';
+  serviceName: string;
+  serviceCharge: number;
   date: string;
   timeSlot: string;
 }
@@ -30,7 +32,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const bookingData: BookingEmailRequest = await req.json();
     
-    console.log("Processing booking confirmation email for:", bookingData.email);
+    console.log("Processing booking confirmation email for:", bookingData.email || "No email provided");
 
     // Email content for customer
     const customerEmailContent = `
@@ -62,6 +64,14 @@ const handler = async (req: Request): Promise<Response> => {
                 <td style="padding: 8px 0; color: #111827;">${bookingData.gender}</td>
               </tr>
               <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Service Type:</td>
+                <td style="padding: 8px 0; color: #111827; font-weight: 500;">${bookingData.serviceName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Consultation Charge:</td>
+                <td style="padding: 8px 0; color: #111827; font-weight: 600;">₹${bookingData.serviceCharge}</td>
+              </tr>
+              <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Consultation Type:</td>
                 <td style="padding: 8px 0; color: #111827; text-transform: capitalize;">${bookingData.consultationType === 'online' ? 'Online Consultation' : 'In-Clinic Visit'}</td>
               </tr>
@@ -77,6 +87,12 @@ const handler = async (req: Request): Promise<Response> => {
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">WhatsApp:</td>
                 <td style="padding: 8px 0; color: #111827;">${bookingData.whatsapp}</td>
               </tr>
+              ${bookingData.email ? `
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Email:</td>
+                <td style="padding: 8px 0; color: #111827;">${bookingData.email}</td>
+              </tr>
+              ` : ''}
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Reason:</td>
                 <td style="padding: 8px 0; color: #111827;">${bookingData.reason}</td>
@@ -111,54 +127,92 @@ const handler = async (req: Request): Promise<Response> => {
         <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px;">
           <h3>Patient Details:</h3>
           <table style="width: 100%; border-collapse: collapse;">
-            <tr><td style="padding: 5px 0; font-weight: bold;">Name:</td><td style="padding: 5px 0;">${bookingData.name}</td></tr>
-            <tr><td style="padding: 5px 0; font-weight: bold;">Age:</td><td style="padding: 5px 0;">${bookingData.age} years</td></tr>
-            <tr><td style="padding: 5px 0; font-weight: bold;">Gender:</td><td style="padding: 5px 0;">${bookingData.gender}</td></tr>
-            <tr><td style="padding: 5px 0; font-weight: bold;">WhatsApp:</td><td style="padding: 5px 0;">${bookingData.whatsapp}</td></tr>
-            <tr><td style="padding: 5px 0; font-weight: bold;">Email:</td><td style="padding: 5px 0;">${bookingData.email}</td></tr>
-            <tr><td style="padding: 5px 0; font-weight: bold;">Consultation Type:</td><td style="padding: 5px 0;">${bookingData.consultationType === 'online' ? 'Online Consultation' : 'In-Clinic Visit'}</td></tr>
-            <tr><td style="padding: 5px 0; font-weight: bold;">Date:</td><td style="padding: 5px 0;">${bookingData.date}</td></tr>
-            <tr><td style="padding: 5px 0; font-weight: bold;">Time:</td><td style="padding: 5px 0;">${bookingData.timeSlot}</td></tr>
-            <tr><td style="padding: 5px 0; font-weight: bold;">Reason:</td><td style="padding: 5px 0;">${bookingData.reason}</td></tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Patient Name:</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 500;">${bookingData.name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Age:</td>
+              <td style="padding: 8px 0; color: #111827;">${bookingData.age} years</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Gender:</td>
+              <td style="padding: 8px 0; color: #111827;">${bookingData.gender}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Service Type:</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 500;">${bookingData.serviceName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Consultation Charge:</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 600;">₹${bookingData.serviceCharge}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Consultation Type:</td>
+              <td style="padding: 8px 0; color: #111827; text-transform: capitalize;">${bookingData.consultationType === 'online' ? 'Online Consultation' : 'In-Clinic Visit'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Date:</td>
+              <td style="padding: 8px 0; color: #111827;">${bookingData.date}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Time:</td>
+              <td style="padding: 8px 0; color: #111827;">${bookingData.timeSlot}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">WhatsApp:</td>
+              <td style="padding: 8px 0; color: #111827;">${bookingData.whatsapp}</td>
+            </tr>
+            ${bookingData.email ? `
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Email:</td>
+              <td style="padding: 8px 0; color: #111827;">${bookingData.email}</td>
+            </tr>
+            ` : ''}
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Reason for Visit:</td>
+              <td style="padding: 8px 0; color: #111827;">${bookingData.reason}</td>
+            </tr>
           </table>
         </div>
       </div>
     `;
 
-    // Send email to customer
-    const customerEmailResponse = await resend.emails.send({
-      from: "Dr. Deogade Clinic <onboarding@resend.dev>",
-      to: [bookingData.email],
-      subject: "Appointment Confirmation - Dr. Deogade Clinic",
-      html: customerEmailContent,
-    });
+    let customerEmail;
+    
+    // Send customer confirmation email only if email is provided
+    if (bookingData.email) {
+      customerEmail = await resend.emails.send({
+        from: 'Dr. Deogade Clinic <onboarding@resend.dev>',
+        to: [bookingData.email],
+        subject: 'Appointment Confirmation - Dr. Deogade Clinic',
+        html: customerEmailContent,
+      });
 
-    console.log("Customer email sent:", customerEmailResponse);
+      console.log('Customer email sent:', customerEmail);
+    }
 
-    // Send email to clinic
-    const clinicEmailResponse = await resend.emails.send({
-      from: "Dr. Deogade Clinic <onboarding@resend.dev>",
-      to: ["drteleconsultation@gmail.com"],
-      subject: `New Appointment: ${bookingData.name} - ${bookingData.date} at ${bookingData.timeSlot}`,
+    // Send clinic notification email (always sent)
+    const clinicEmail = await resend.emails.send({
+      from: 'Dr. Deogade Clinic <onboarding@resend.dev>',
+      to: ['drteleconsultation@gmail.com'], // Replace with actual clinic email
+      subject: `New Appointment: ${bookingData.name} - ${bookingData.serviceName} - ${bookingData.date} at ${bookingData.timeSlot}`,
       html: clinicEmailContent,
     });
 
-    console.log("Clinic email sent:", clinicEmailResponse);
+    console.log('Clinic email sent:', clinicEmail);
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        customerEmailId: customerEmailResponse.data?.id,
-        clinicEmailId: clinicEmailResponse.data?.id 
-      }), 
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
-        },
-      }
-    );
+    return new Response(JSON.stringify({ 
+      success: true, 
+      customerEmailId: customerEmail?.data?.id,
+      clinicEmailId: clinicEmail.data?.id 
+    }), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders,
+      },
+    });
   } catch (error: any) {
     console.error("Error in send-booking-confirmation function:", error);
     return new Response(

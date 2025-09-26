@@ -40,8 +40,17 @@ const AdminDashboard: React.FC = () => {
         .select('*')
         .order('appointment_date', { ascending: true });
 
-      if (error) throw error;
-      setAppointments(data || []);
+      if (error) {
+        console.error('Supabase error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load appointments. Please check if the appointments table exists.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAppointments((data as Appointment[]) || []);
     } catch (error) {
       console.error('Error fetching appointments:', error);
       toast({
@@ -93,11 +102,6 @@ const AdminDashboard: React.FC = () => {
 
   const todayAppointments = appointments.filter(apt => 
     new Date(apt.appointment_date).toDateString() === new Date().toDateString()
-  );
-
-  const upcomingAppointments = appointments.filter(apt => 
-    new Date(apt.appointment_date) > new Date() &&
-    new Date(apt.appointment_date).toDateString() !== new Date().toDateString()
   );
 
   if (loading) {
@@ -161,17 +165,17 @@ const AdminDashboard: React.FC = () => {
           </Card>
         </div>
 
-        {/* Today's Appointments */}
-        <Card className="mb-8">
+        {/* All Appointments */}
+        <Card>
           <CardHeader>
-            <CardTitle>Today's Appointments</CardTitle>
+            <CardTitle>All Appointments ({appointments.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            {todayAppointments.length === 0 ? (
-              <p className="text-muted-foreground">No appointments for today</p>
+            {appointments.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No appointments found</p>
             ) : (
               <div className="space-y-4">
-                {todayAppointments.map((appointment) => (
+                {appointments.map((appointment) => (
                   <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="grid grid-cols-1 md:grid-cols-6 gap-4 flex-1">
                       <div>
@@ -179,11 +183,12 @@ const AdminDashboard: React.FC = () => {
                         <p className="text-sm text-muted-foreground">{appointment.age}Y, {appointment.gender}</p>
                       </div>
                       <div>
-                        <p className="text-sm">{appointment.time_slot}</p>
-                        <p className="text-sm text-muted-foreground">{appointment.consultation_type}</p>
+                        <p className="text-sm">{new Date(appointment.appointment_date).toLocaleDateString()}</p>
+                        <p className="text-sm text-muted-foreground">{appointment.time_slot}</p>
                       </div>
                       <div>
-                        <p className="text-sm">{appointment.service_type}</p>
+                        <p className="text-sm">{appointment.consultation_type}</p>
+                        <p className="text-sm text-muted-foreground">{appointment.service_type}</p>
                       </div>
                       <div>
                         <p className="text-sm">{appointment.whatsapp}</p>
@@ -199,96 +204,38 @@ const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex gap-2 ml-4">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateAppointmentStatus(appointment.id, 'confirmed')}
-                        disabled={appointment.status === 'confirmed'}
-                      >
-                        Confirm
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
-                        disabled={appointment.status === 'completed'}
-                      >
-                        Complete
-                      </Button>
+                      {appointment.status === 'pending' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateAppointmentStatus(appointment.id, 'confirmed')}
+                        >
+                          Confirm
+                        </Button>
+                      )}
+                      {(appointment.status === 'confirmed' || appointment.status === 'pending') && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
+                        >
+                          Complete
+                        </Button>
+                      )}
+                      {appointment.status !== 'cancelled' && appointment.status !== 'completed' && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => updateAppointmentStatus(appointment.id, 'cancelled')}
+                        >
+                          Cancel
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* All Appointments */}
-        <Card>
-          <CardHeader>
-            <CardTitle>All Appointments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {appointments.map((appointment) => (
-                <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="grid grid-cols-1 md:grid-cols-7 gap-4 flex-1">
-                    <div>
-                      <p className="font-medium">{appointment.patient_name}</p>
-                      <p className="text-sm text-muted-foreground">{appointment.age}Y, {appointment.gender}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm">{appointment.appointment_date}</p>
-                      <p className="text-sm text-muted-foreground">{appointment.time_slot}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm">{appointment.consultation_type}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm">{appointment.service_type}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm">{appointment.whatsapp}</p>
-                      {appointment.email && <p className="text-sm text-muted-foreground">{appointment.email}</p>}
-                    </div>
-                    <div>
-                      <p className="text-sm">{appointment.reason}</p>
-                    </div>
-                    <div>
-                      <Badge className={getStatusColor(appointment.status)}>
-                        {appointment.status}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 ml-4">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => updateAppointmentStatus(appointment.id, 'confirmed')}
-                      disabled={appointment.status === 'confirmed' || appointment.status === 'completed'}
-                    >
-                      Confirm
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
-                      disabled={appointment.status === 'completed'}
-                    >
-                      Complete
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => updateAppointmentStatus(appointment.id, 'cancelled')}
-                      disabled={appointment.status === 'cancelled' || appointment.status === 'completed'}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
           </CardContent>
         </Card>
       </div>

@@ -7,26 +7,29 @@ import ServicesSection from '@/components/ServicesSection';
 import MapSection from '@/components/MapSection';
 import BookingModal from '@/components/BookingModal';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import { LanguageProvider } from '@/components/LanguageSelector';
 
 const Index = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <HeroSection onBookingClick={() => setIsBookingOpen(true)} />
-      <ChargesSection />
-      <AboutSection />
-      <ServicesSection />
-      <MapSection />
-      
-      <BookingModal 
-        isOpen={isBookingOpen} 
-        onClose={() => setIsBookingOpen(false)} 
-      />
-      
-      <WhatsAppButton />
-    </div>
+    <LanguageProvider>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <HeroSection onBookingClick={() => setIsBookingOpen(true)} />
+        <ChargesSection />
+        <AboutSection />
+        <ServicesSection />
+        <MapSection />
+        
+        <BookingModal 
+          isOpen={isBookingOpen} 
+          onClose={() => setIsBookingOpen(false)} 
+        />
+        
+        <WhatsAppButton />
+      </div>
+    </LanguageProvider>
   );
 };
 
