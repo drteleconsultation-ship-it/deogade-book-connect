@@ -36,6 +36,7 @@ interface BookingData {
   serviceType: string;
   date: Date | undefined;
   timeSlot: string;
+  attachments?: File[];
 }
 
 interface ServiceType {
@@ -113,7 +114,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!booking.date || !booking.timeSlot || !booking.name || !booking.age || !booking.gender || !booking.whatsapp || !booking.email || !booking.reason || !booking.serviceType) {
+    if (!booking.date || !booking.timeSlot || !booking.name || !booking.age || !booking.gender || !booking.whatsapp || !booking.reason || !booking.serviceType) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields including service type, date and time.",
