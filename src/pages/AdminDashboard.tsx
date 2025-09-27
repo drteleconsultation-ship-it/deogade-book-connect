@@ -26,12 +26,49 @@ interface Appointment {
 const AdminDashboard: React.FC = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchAppointments();
+    checkAuth();
   }, []);
+
+  const checkAuth = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        navigate('/admin-auth');
+        return;
+      }
+
+      // Check if user is authorized admin
+      const { data: adminUser, error: adminError } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('email', session.user.email)
+        .eq('is_active', true)
+        .single();
+
+      if (adminError || !adminUser) {
+        toast({
+          title: "Access Denied",
+          description: "You are not authorized to access this dashboard.",
+          variant: "destructive",
+        });
+        await supabase.auth.signOut();
+        navigate('/admin-auth');
+        return;
+      }
+
+      setUser(session.user);
+      fetchAppointments();
+    } catch (error) {
+      console.error('Auth check error:', error);
+      navigate('/admin-auth');
+    }
+  };
 
   const fetchAppointments = async () => {
     try {
@@ -104,18 +141,28 @@ const AdminDashboard: React.FC = () => {
     new Date(apt.appointment_date).toDateString() === new Date().toDateString()
   );
 
-  if (loading) {
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/admin-auth');
+  };
+
+  if (loading || !user) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="outline" size="icon" onClick={() => navigate('/')}>
-            <ArrowLeft className="h-4 w-4" />
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => navigate('/')}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
+          </div>
+          <Button variant="outline" onClick={handleSignOut}>
+            Sign Out
           </Button>
-          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
         </div>
 
         {/* Stats Cards */}

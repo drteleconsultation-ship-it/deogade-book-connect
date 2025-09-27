@@ -1,8 +1,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Monitor, Stethoscope, Clock, Shield, Heart, UserCheck } from 'lucide-react';
+import { useLanguage } from '@/components/LanguageSelector';
 
 const ServicesSection: React.FC = () => {
+  const { t } = useLanguage();
   const services = [
     {
       icon: Monitor,
@@ -48,7 +50,7 @@ const ServicesSection: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">
-              Our Medical Services
+              {t('services.title')}
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               Comprehensive healthcare solutions designed to meet your medical needs 

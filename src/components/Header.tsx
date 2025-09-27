@@ -19,7 +19,7 @@ const Header: React.FC = () => {
           
           <div className="flex items-center gap-4">
             <LanguageSelector />
-            <Link to="/admin">
+            <Link to="/admin-auth">
               <Button variant="outline" size="sm">Admin</Button>
             </Link>
           </div>

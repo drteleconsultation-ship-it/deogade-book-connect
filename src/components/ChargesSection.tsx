@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { IndianRupee, UserCheck, Heart, Sparkles, Brain, FileText } from 'lucide-react';
+import { useLanguage } from '@/components/LanguageSelector';
 
 // Import background images
 import psychiatricBg from '@/assets/psychiatric-counselling-bg.jpg';
@@ -10,6 +11,7 @@ import gynecologyBg from '@/assets/gynecology-bg.jpg';
 import dermatologyBg from '@/assets/dermatology-bg.jpg';
 
 const ChargesSection: React.FC = () => {
+  const { t } = useLanguage();
   const charges = [
     {
       icon: UserCheck,
@@ -67,7 +69,7 @@ const ChargesSection: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">
-              Consultation Charges
+              {t('charges.title')}
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               Transparent and affordable pricing for quality healthcare services

@@ -6,7 +6,7 @@ import AboutSection from '@/components/AboutSection';
 import ServicesSection from '@/components/ServicesSection';
 import MapSection from '@/components/MapSection';
 import BookingModal from '@/components/BookingModal';
-import WhatsAppButton from '@/components/WhatsAppButton';
+import FloatingButtons from '@/components/FloatingButtons';
 import { LanguageProvider } from '@/components/LanguageSelector';
 
 const Index = () => {
@@ -27,7 +27,7 @@ const Index = () => {
           onClose={() => setIsBookingOpen(false)} 
         />
         
-        <WhatsAppButton />
+        <FloatingButtons />
       </div>
     </LanguageProvider>
   );

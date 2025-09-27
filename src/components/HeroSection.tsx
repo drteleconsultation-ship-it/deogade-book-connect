@@ -2,12 +2,15 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, MapPin, Phone } from 'lucide-react';
 import heroImage from '@/assets/clinic-hero.jpg';
+import { useLanguage } from '@/components/LanguageSelector';
 
 interface HeroSectionProps {
   onBookingClick: () => void;
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({ onBookingClick }) => {
+  const { t } = useLanguage();
+  
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background Image with Overlay */}
@@ -24,17 +27,16 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onBookingClick }) => {
       <div className="relative z-10 container mx-auto px-4 py-20 text-center text-white">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-5xl md:text-7xl font-bold mb-4 leading-tight">
-            Dr. Deogade Clinic
+            {t('header.title')}
           </h1>
           <div className="text-lg md:text-xl mb-8 opacity-95 font-medium">
-            Dr Rikki Deogade ( MBBS, CGO, CCH, CSD, CVD, Medical officer )
+            {t('header.subtitle')}
           </div>
           <p className="text-xl md:text-2xl mb-8 opacity-90 leading-relaxed">
-            Professional Medical Care & Teleconsultation Services
+            {t('hero.title')}
           </p>
           <p className="text-lg mb-12 opacity-80 max-w-2xl mx-auto">
-            Experience quality healthcare with both online consultations and in-clinic visits. 
-            Book your appointment today for personalized medical care.
+            {t('hero.subtitle')}
           </p>
 
           {/* Call to Action Buttons */}
@@ -46,7 +48,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onBookingClick }) => {
               className="text-lg px-8 py-4"
             >
               <Calendar className="mr-2 h-5 w-5" />
-              Book Appointment
+              {t('hero.bookNow')}
             </Button>
             <Button 
               variant="outline"
