@@ -13,6 +13,23 @@ import { Calendar as CalendarIcon, Clock, CheckCircle, CreditCard, ArrowLeft, Ex
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { z } from 'zod';
+
+// Validation schema
+const bookingSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  age: z.string().regex(/^\d+$/, "Age must be a number").refine(val => {
+    const num = parseInt(val);
+    return num >= 1 && num <= 120;
+  }, "Age must be between 1 and 120"),
+  gender: z.enum(['male', 'female', 'other'], { required_error: "Gender is required" }),
+  whatsapp: z.string().trim().regex(/^\+?[1-9]\d{9,14}$/, "Invalid phone number format"),
+  email: z.string().trim().email("Invalid email address").max(255, "Email too long").optional().or(z.literal('')),
+  reason: z.string().trim().min(1, "Reason is required").max(1000, "Reason must be less than 1000 characters"),
+  serviceType: z.string().min(1, "Service type is required"),
+  date: z.date({ required_error: "Appointment date is required" }),
+  timeSlot: z.string().min(1, "Time slot is required"),
+});
 
 // Import background images
 import psychiatricBg from '@/assets/psychiatric-counselling-bg.jpg';
@@ -115,16 +132,30 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!booking.date || !booking.timeSlot || !booking.name || !booking.age || !booking.gender || !booking.whatsapp || !booking.reason || !booking.serviceType) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields including service type, date and time.",
-        variant: "destructive",
+    // Validate form data
+    try {
+      bookingSchema.parse({
+        name: booking.name,
+        age: booking.age,
+        gender: booking.gender,
+        whatsapp: booking.whatsapp,
+        email: booking.email || '',
+        reason: booking.reason,
+        serviceType: booking.serviceType,
+        date: booking.date,
+        timeSlot: booking.timeSlot,
       });
-      return;
+      
+      setCurrentStep('payment');
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      }
     }
-
-    setCurrentStep('payment');
   };
 
   const handlePaymentConfirmation = async () => {

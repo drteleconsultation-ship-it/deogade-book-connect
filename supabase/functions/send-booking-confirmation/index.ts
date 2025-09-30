@@ -23,6 +23,46 @@ interface BookingEmailRequest {
   timeSlot: string;
 }
 
+// Input validation and sanitization
+function sanitizeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
+
+function validateBookingRequest(data: any): { valid: boolean; error?: string } {
+  if (!data.name || typeof data.name !== 'string' || data.name.length > 100) {
+    return { valid: false, error: 'Invalid name' };
+  }
+  if (!data.age || typeof data.age !== 'string' || !/^\d+$/.test(data.age)) {
+    return { valid: false, error: 'Invalid age' };
+  }
+  const ageNum = parseInt(data.age);
+  if (ageNum < 1 || ageNum > 120) {
+    return { valid: false, error: 'Age must be between 1 and 120' };
+  }
+  if (!['male', 'female', 'other'].includes(data.gender)) {
+    return { valid: false, error: 'Invalid gender' };
+  }
+  if (!data.whatsapp || typeof data.whatsapp !== 'string' || data.whatsapp.length > 20) {
+    return { valid: false, error: 'Invalid WhatsApp number' };
+  }
+  if (data.email && (typeof data.email !== 'string' || data.email.length > 255)) {
+    return { valid: false, error: 'Invalid email' };
+  }
+  if (!data.reason || typeof data.reason !== 'string' || data.reason.length > 1000) {
+    return { valid: false, error: 'Invalid reason' };
+  }
+  if (!data.serviceName || typeof data.serviceName !== 'string') {
+    return { valid: false, error: 'Invalid service name' };
+  }
+  return { valid: true };
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -31,6 +71,25 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const bookingData: BookingEmailRequest = await req.json();
+    
+    // Validate input
+    const validation = validateBookingRequest(bookingData);
+    if (!validation.valid) {
+      console.error('Validation error:', validation.error);
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+    
+    // Sanitize all text inputs for HTML output
+    const sanitizedName = sanitizeHtml(bookingData.name);
+    const sanitizedReason = sanitizeHtml(bookingData.reason);
+    const sanitizedServiceName = sanitizeHtml(bookingData.serviceName);
+    const sanitizedEmail = bookingData.email ? sanitizeHtml(bookingData.email) : '';
     
     console.log("Processing booking confirmation email for:", bookingData.email || "No email provided");
 
@@ -45,7 +104,7 @@ const handler = async (req: Request): Promise<Response> => {
           
           <div style="background-color: #dbeafe; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
             <h2 style="color: #1e40af; margin: 0 0 15px 0; font-size: 22px;">✅ Appointment Confirmed!</h2>
-            <p style="color: #374151; margin: 0; font-size: 16px;">Dear ${bookingData.name}, your appointment has been successfully booked.</p>
+            <p style="color: #374151; margin: 0; font-size: 16px;">Dear ${sanitizedName}, your appointment has been successfully booked.</p>
           </div>
 
           <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
@@ -53,7 +112,7 @@ const handler = async (req: Request): Promise<Response> => {
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Patient Name:</td>
-                <td style="padding: 8px 0; color: #111827; font-weight: 500;">${bookingData.name}</td>
+                <td style="padding: 8px 0; color: #111827; font-weight: 500;">${sanitizedName}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Age:</td>
@@ -65,7 +124,7 @@ const handler = async (req: Request): Promise<Response> => {
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Service Type:</td>
-                <td style="padding: 8px 0; color: #111827; font-weight: 500;">${bookingData.serviceName}</td>
+                <td style="padding: 8px 0; color: #111827; font-weight: 500;">${sanitizedServiceName}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Consultation Charge:</td>
@@ -90,12 +149,12 @@ const handler = async (req: Request): Promise<Response> => {
               ${bookingData.email ? `
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Email:</td>
-                <td style="padding: 8px 0; color: #111827;">${bookingData.email}</td>
+                <td style="padding: 8px 0; color: #111827;">${sanitizedEmail}</td>
               </tr>
               ` : ''}
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Reason:</td>
-                <td style="padding: 8px 0; color: #111827;">${bookingData.reason}</td>
+                <td style="padding: 8px 0; color: #111827;">${sanitizedReason}</td>
               </tr>
             </table>
           </div>
@@ -129,7 +188,7 @@ const handler = async (req: Request): Promise<Response> => {
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Patient Name:</td>
-              <td style="padding: 8px 0; color: #111827; font-weight: 500;">${bookingData.name}</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 500;">${sanitizedName}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Age:</td>
@@ -141,7 +200,7 @@ const handler = async (req: Request): Promise<Response> => {
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Service Type:</td>
-              <td style="padding: 8px 0; color: #111827; font-weight: 500;">${bookingData.serviceName}</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 500;">${sanitizedServiceName}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Consultation Charge:</td>
@@ -166,12 +225,12 @@ const handler = async (req: Request): Promise<Response> => {
             ${bookingData.email ? `
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Email:</td>
-              <td style="padding: 8px 0; color: #111827;">${bookingData.email}</td>
+              <td style="padding: 8px 0; color: #111827;">${sanitizedEmail}</td>
             </tr>
             ` : ''}
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Reason for Visit:</td>
-              <td style="padding: 8px 0; color: #111827;">${bookingData.reason}</td>
+              <td style="padding: 8px 0; color: #111827;">${sanitizedReason}</td>
             </tr>
           </table>
         </div>
