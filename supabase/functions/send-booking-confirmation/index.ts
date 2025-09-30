@@ -1,7 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -70,6 +74,43 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Rate limiting check
+    const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const currentHour = new Date();
+    currentHour.setMinutes(0, 0, 0);
+    
+    // Check current rate limit
+    const { data: rateLimit } = await supabase
+      .from('function_rate_limits')
+      .select('request_count')
+      .eq('function_name', 'send-booking-confirmation')
+      .eq('identifier', clientIP)
+      .gte('window_start', currentHour.toISOString())
+      .single();
+    
+    if (rateLimit && rateLimit.request_count >= 5) {
+      console.warn(`Rate limit exceeded for IP: ${clientIP}`);
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please try again later.' }),
+        {
+          status: 429,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+    
+    // Increment or create rate limit record
+    await supabase
+      .from('function_rate_limits')
+      .upsert({
+        function_name: 'send-booking-confirmation',
+        identifier: clientIP,
+        window_start: currentHour.toISOString(),
+        request_count: (rateLimit?.request_count || 0) + 1,
+      }, {
+        onConflict: 'function_name,identifier,window_start'
+      });
+
     const bookingData: BookingEmailRequest = await req.json();
     
     // Validate input
@@ -91,7 +132,7 @@ const handler = async (req: Request): Promise<Response> => {
     const sanitizedServiceName = sanitizeHtml(bookingData.serviceName);
     const sanitizedEmail = bookingData.email ? sanitizeHtml(bookingData.email) : '';
     
-    console.log("Processing booking confirmation email for:", bookingData.email || "No email provided");
+    console.log("Processing booking confirmation - Service:", bookingData.serviceName);
 
     // Email content for customer
     const customerEmailContent = `
@@ -248,18 +289,18 @@ const handler = async (req: Request): Promise<Response> => {
         html: customerEmailContent,
       });
 
-      console.log('Customer email sent:', customerEmail);
+      console.log('Customer email sent successfully');
     }
 
     // Send clinic notification email (always sent)
     const clinicEmail = await resend.emails.send({
       from: 'Dr. Deogade Clinic <onboarding@resend.dev>',
-      to: ['drteleconsultation@gmail.com'], // Replace with actual clinic email
-      subject: `New Appointment: ${bookingData.name} - ${bookingData.serviceName} - ${bookingData.date} at ${bookingData.timeSlot}`,
+      to: ['drteleconsultation@gmail.com'],
+      subject: `New Appointment: ${bookingData.serviceName} - ${bookingData.date} at ${bookingData.timeSlot}`,
       html: clinicEmailContent,
     });
 
-    console.log('Clinic email sent:', clinicEmail);
+    console.log('Clinic email sent successfully');
 
     return new Response(JSON.stringify({ 
       success: true, 

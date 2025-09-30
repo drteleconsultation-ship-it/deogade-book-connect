@@ -102,6 +102,17 @@ const AdminDashboard: React.FC = () => {
 
   const updateAppointmentStatus = async (id: string, status: string) => {
     try {
+      // Validate status parameter
+      const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+      if (!validStatuses.includes(status)) {
+        toast({
+          title: "Error",
+          description: "Invalid appointment status",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('appointments')
         .update({ status })
@@ -118,7 +129,7 @@ const AdminDashboard: React.FC = () => {
         description: `Appointment ${status}`,
       });
     } catch (error) {
-      console.error('Error updating appointment:', error);
+      console.error('Error updating appointment');
       toast({
         title: "Error",
         description: "Failed to update appointment",

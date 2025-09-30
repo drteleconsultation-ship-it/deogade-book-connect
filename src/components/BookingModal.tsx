@@ -185,11 +185,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         .single();
 
       if (dbError) {
-        console.error('Database error:', dbError);
+        console.error('Database error: Failed to save appointment');
         throw new Error('Failed to save appointment to database');
       }
 
-      console.log('Appointment saved:', appointmentResult);
+      console.log('Appointment saved successfully');
 
       // Send confirmation emails
       const response = await supabase.functions.invoke('send-booking-confirmation', {
@@ -211,11 +211,9 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       if (!response.error) {
         console.log('Email confirmation sent successfully');
       } else {
-        console.error('Email sending failed:', response.error);
+        console.error('Email sending failed');
         // Don't throw error here as appointment is already saved
       }
-
-      console.log('Email confirmation result:', response.data);
       
       toast({
         title: "Appointment Booked Successfully! ✅",
@@ -241,7 +239,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       
       onClose();
     } catch (error) {
-      console.error('Booking error:', error);
+      console.error('Booking error');
       toast({
         title: "Booking Failed",
         description: "There was an error processing your appointment. Please try again or contact us directly via WhatsApp.",
@@ -290,8 +288,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         throw new Error('Failed to send confirmation emails');
       }
 
-      const result = await response.json();
-      console.log('Email confirmation result:', result);
+      console.log('Email confirmation sent successfully');
       
       toast({
         title: "Appointment Booked Successfully! ✅",
@@ -316,7 +313,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       
       onClose();
     } catch (error) {
-      console.error('Booking error:', error);
+      console.error('Booking error');
       toast({
         title: "Booking Failed",
         description: "There was an error processing your appointment. Please try again or contact us directly via WhatsApp.",

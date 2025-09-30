@@ -19,23 +19,8 @@ const AdminAuth: React.FC = () => {
   const sendOTP = async () => {
     setLoading(true);
     try {
-      // First check if this email is authorized admin
-      const { data: adminUser, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('email', email)
-        .eq('is_active', true)
-        .single();
-
-      if (adminError || !adminUser) {
-        toast({
-          title: "Access Denied",
-          description: "This email is not authorized for admin access.",
-          variant: "destructive",
-        });
-        return;
-      }
-
+      // Send OTP without revealing if email is authorized
+      // This prevents email enumeration attacks
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
@@ -47,14 +32,13 @@ const AdminAuth: React.FC = () => {
 
       setStep('otp');
       toast({
-        title: "OTP Sent",
-        description: "Please check your email for the verification code.",
+        title: "Verification Code Sent",
+        description: "If your email is authorized, you will receive a verification code.",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+        title: "Request Received",
+        description: "If your email is authorized, you will receive a verification code.",
       });
     } finally {
       setLoading(false);
@@ -73,6 +57,24 @@ const AdminAuth: React.FC = () => {
       if (error) throw error;
 
       if (data.user) {
+        // Verify admin status after successful OTP
+        const { data: adminUser, error: adminError } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('email', email)
+          .eq('is_active', true)
+          .single();
+
+        if (adminError || !adminUser) {
+          await supabase.auth.signOut();
+          toast({
+            title: "Access Denied",
+            description: "You are not authorized for admin access.",
+            variant: "destructive",
+          });
+          return;
+        }
+
         toast({
           title: "Success",
           description: "Login successful! Redirecting to admin dashboard.",
@@ -81,8 +83,8 @@ const AdminAuth: React.FC = () => {
       }
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Invalid OTP. Please try again.",
+        title: "Verification Failed",
+        description: "Invalid or expired code. Please try again.",
         variant: "destructive",
       });
     } finally {
