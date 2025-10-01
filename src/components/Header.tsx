@@ -1,8 +1,6 @@
 import React from 'react';
 import logoImage from '@/assets/logo.jpg';
 import LanguageSelector from '@/components/LanguageSelector';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 
 const Header: React.FC = () => {
   return (
@@ -19,9 +17,6 @@ const Header: React.FC = () => {
           
           <div className="flex items-center gap-4">
             <LanguageSelector />
-            <Link to="/admin-auth">
-              <Button variant="outline" size="sm">Admin</Button>
-            </Link>
           </div>
         </div>
       </div>
