@@ -178,11 +178,9 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         status: 'pending'
       };
 
-      const { data: appointmentResult, error: dbError } = await supabase
+      const { error: dbError } = await supabase
         .from('appointments')
-        .insert([appointmentData])
-        .select()
-        .single();
+        .insert([appointmentData]);
 
       if (dbError) {
         console.error('Database error: Failed to save appointment');
@@ -485,7 +483,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                 mode="single"
                 selected={booking.date}
                 onSelect={(date) => setBooking({ ...booking, date })}
-                disabled={(date) => date < new Date() || date < new Date("1900-01-01")}
+                disabled={(date) => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  return date < today || date < new Date("1900-01-01");
+                }}
                 initialFocus
                 className="p-3 pointer-events-auto"
               />
