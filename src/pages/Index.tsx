@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import ChargesSection from '@/components/ChargesSection';
@@ -11,6 +11,14 @@ import { LanguageProvider } from '@/components/LanguageSelector';
 
 const Index = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('book') === 'true' || params.get('action') === 'book') {
+      setIsBookingOpen(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   return (
     <LanguageProvider>
