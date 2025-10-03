@@ -1,5 +1,5 @@
 import React from 'react';
-import logoImage from '@/assets/logo.jpg';
+import logoImage from '@/assets/logo-new.jpg';
 import doctorPhoto from '@/assets/doctor-photo.jpg';
 import LanguageSelector from '@/components/LanguageSelector';
 
