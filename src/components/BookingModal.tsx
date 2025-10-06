@@ -76,8 +76,8 @@ const services: ServiceType[] = [
   { id: 'followup', name: 'Free follow up for same issue', price: 0, description: 'Complimentary follow-up consultation for the same medical issue' }
 ];
 
-// Generate time slots based on consultation type
-const generateTimeSlots = (consultationType: 'online' | 'clinic') => {
+// Generate time slots based on consultation type and filter for same-day bookings
+const generateTimeSlots = (consultationType: 'online' | 'clinic', selectedDate?: Date) => {
   const slots = [];
   let startHour, endHour;
   
@@ -91,8 +91,23 @@ const generateTimeSlots = (consultationType: 'online' | 'clinic') => {
     endHour = 22;
   }
   
+  const now = new Date();
+  const isToday = selectedDate && 
+    selectedDate.getDate() === now.getDate() &&
+    selectedDate.getMonth() === now.getMonth() &&
+    selectedDate.getFullYear() === now.getFullYear();
+  
   for (let hour = startHour; hour < endHour; hour++) {
     for (let minute = 0; minute < 60; minute += 10) {
+      // For same-day bookings, filter out past time slots
+      if (isToday) {
+        const slotTime = hour * 60 + minute;
+        const currentTime = now.getHours() * 60 + now.getMinutes();
+        if (slotTime <= currentTime) {
+          continue; // Skip past time slots
+        }
+      }
+      
       const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
       slots.push(time);
     }
@@ -119,7 +134,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
-  const timeSlots = generateTimeSlots(booking.consultationType);
+  const timeSlots = generateTimeSlots(booking.consultationType, booking.date);
   const selectedService = services.find(s => s.id === booking.serviceType);
   const amount = selectedService?.price || 0;
 
@@ -492,7 +507,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                 disabled={(date) => {
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
-                  return date < today || date < new Date("1900-01-01");
+                  return date < today;
                 }}
                 initialFocus
                 className="p-3 pointer-events-auto"
