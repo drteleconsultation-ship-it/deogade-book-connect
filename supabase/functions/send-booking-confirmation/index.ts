@@ -25,6 +25,7 @@ interface BookingEmailRequest {
   serviceCharge: number;
   date: string;
   timeSlot: string;
+  paymentMethod?: string;
 }
 
 // Input validation and sanitization
@@ -131,6 +132,9 @@ const handler = async (req: Request): Promise<Response> => {
     const sanitizedReason = sanitizeHtml(bookingData.reason);
     const sanitizedServiceName = sanitizeHtml(bookingData.serviceName);
     const sanitizedEmail = bookingData.email ? sanitizeHtml(bookingData.email) : '';
+    const paymentMethodText = bookingData.paymentMethod === 'pay-later' 
+      ? 'Pay when consultation starts with doctor' 
+      : 'UPI Payment (Completed)';
     
     console.log("Processing booking confirmation - Service:", bookingData.serviceName);
 
@@ -170,6 +174,10 @@ const handler = async (req: Request): Promise<Response> => {
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Consultation Charge:</td>
                 <td style="padding: 8px 0; color: #111827; font-weight: 600;">₹${bookingData.serviceCharge}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Payment Method:</td>
+                <td style="padding: 8px 0; color: #111827; font-weight: 500;">${paymentMethodText}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Consultation Type:</td>
@@ -246,6 +254,10 @@ const handler = async (req: Request): Promise<Response> => {
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Consultation Charge:</td>
               <td style="padding: 8px 0; color: #111827; font-weight: 600;">₹${bookingData.serviceCharge}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Payment Method:</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 500;">${paymentMethodText}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Consultation Type:</td>

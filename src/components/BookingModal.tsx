@@ -55,6 +55,7 @@ interface BookingData {
   date: Date | undefined;
   timeSlot: string;
   attachments?: File[];
+  paymentMethod: 'upi' | 'pay-later';
 }
 
 interface ServiceType {
@@ -113,6 +114,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     serviceType: '',
     date: undefined,
     timeSlot: '',
+    paymentMethod: 'upi',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
@@ -175,7 +177,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         service_type: selectedService?.name || '',
         appointment_date: booking.date!.toISOString().split('T')[0],
         time_slot: booking.timeSlot,
-        status: 'pending'
+        status: 'pending',
+        payment_method: booking.paymentMethod
       };
 
       const { error: dbError } = await supabase
@@ -203,6 +206,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           serviceCharge: selectedService?.price || 0,
           date: format(booking.date!, 'PPP'),
           timeSlot: booking.timeSlot,
+          paymentMethod: booking.paymentMethod,
         },
       });
 
@@ -231,6 +235,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         date: undefined,
         timeSlot: '',
         attachments: undefined,
+        paymentMethod: 'upi',
       });
       setCurrentStep('form');
       setPaymentConfirmed(false);
@@ -305,6 +310,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         serviceType: '',
         date: undefined,
         timeSlot: '',
+        paymentMethod: 'upi',
       });
       setCurrentStep('form');
       setPaymentConfirmed(false);
@@ -559,53 +565,112 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h4 className="text-lg font-semibold mb-4 text-center">Pay via UPI</h4>
-        <div className="space-y-4">
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-4">
-              UPI ID: <span className="font-mono font-semibold">7415379845@okbizaxis</span>
-            </p>
-            
-            <Button 
-              className="w-full mb-4" 
-              variant="medical"
-              onClick={() => window.open(generateUPILink(), '_blank')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Pay ₹{amount} via UPI
-            </Button>
-            
-            <p className="text-xs text-muted-foreground mb-4">
-              Click above to open your UPI app and complete the payment
-            </p>
+      {/* Payment Method Selection */}
+      <div className="space-y-4">
+        <h4 className="text-lg font-semibold text-center">Select Payment Method</h4>
+        <RadioGroup
+          value={booking.paymentMethod}
+          onValueChange={(value: 'upi' | 'pay-later') => 
+            setBooking({ ...booking, paymentMethod: value })
+          }
+          className="space-y-3"
+        >
+          <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+            <RadioGroupItem value="upi" id="upi-payment" className="mt-1" />
+            <Label htmlFor="upi-payment" className="flex-1 cursor-pointer">
+              <div className="font-semibold">Pay via UPI Now</div>
+              <div className="text-sm text-muted-foreground">Complete payment instantly using UPI</div>
+            </Label>
           </div>
-          
-          <div className="border-t pt-4">
-            <p className="text-sm text-muted-foreground text-center mb-4">
-              After completing payment, click below to confirm
-            </p>
+          <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+            <RadioGroupItem value="pay-later" id="pay-later" className="mt-1" />
+            <Label htmlFor="pay-later" className="flex-1 cursor-pointer">
+              <div className="font-semibold">Pay when consultation starts with doctor</div>
+              <div className="text-sm text-muted-foreground">Pay directly during your appointment</div>
+            </Label>
+          </div>
+        </RadioGroup>
+      </div>
+
+      {booking.paymentMethod === 'upi' && (
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h4 className="text-lg font-semibold mb-4 text-center">Pay via UPI</h4>
+          <div className="space-y-4">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                UPI ID: <span className="font-mono font-semibold">7415379845@okbizaxis</span>
+              </p>
+              
+              <Button 
+                className="w-full mb-4" 
+                variant="medical"
+                onClick={() => window.open(generateUPILink(), '_blank')}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Pay ₹{amount} via UPI
+              </Button>
+              
+              <p className="text-xs text-muted-foreground mb-4">
+                Click above to open your UPI app and complete the payment
+              </p>
+            </div>
+            
+            <div className="border-t pt-4">
+              <p className="text-sm text-muted-foreground text-center mb-4">
+                After completing payment, click below to confirm
+              </p>
+              <Button 
+                onClick={handlePaymentConfirmation}
+                className="w-full"
+                variant="outline"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    Confirming Appointment...
+                  </div>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    I have completed the payment
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {booking.paymentMethod === 'pay-later' && (
+        <div className="bg-card border border-border rounded-lg p-6">
+          <div className="text-center space-y-4">
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                You have selected to pay during consultation. Please bring the exact amount (₹{amount}) when you visit the clinic or keep it ready for online payment at the time of consultation.
+              </p>
+            </div>
             <Button 
               onClick={handlePaymentConfirmation}
               className="w-full"
-              variant="outline"
+              variant="medical"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
                   Confirming Appointment...
                 </div>
               ) : (
                 <>
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  I have completed the payment
+                  Confirm Appointment
                 </>
               )}
             </Button>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="flex gap-3">
         <Button 

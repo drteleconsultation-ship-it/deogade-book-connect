@@ -48,6 +48,7 @@ export type Database = {
           gender: string
           id: string
           patient_name: string
+          payment_method: string
           reason: string
           service_type: string
           status: string
@@ -64,6 +65,7 @@ export type Database = {
           gender: string
           id?: string
           patient_name: string
+          payment_method?: string
           reason: string
           service_type: string
           status?: string
@@ -80,6 +82,7 @@ export type Database = {
           gender?: string
           id?: string
           patient_name?: string
+          payment_method?: string
           reason?: string
           service_type?: string
           status?: string
