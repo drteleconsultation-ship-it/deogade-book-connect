@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 // Validation schema
 const bookingSchema = z.object({
@@ -117,7 +118,9 @@ const generateTimeSlots = (consultationType: 'online' | 'clinic', selectedDate?:
 
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const { toast } = useToast();
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
   const [currentStep, setCurrentStep] = useState<'form' | 'payment' | 'confirmation'>('form');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [booking, setBooking] = useState<BookingData>({
     name: '',
     age: '',
@@ -148,6 +151,16 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check CAPTCHA verification
+    if (!captchaToken) {
+      toast({
+        title: "Verification Required",
+        description: "Please complete the CAPTCHA verification before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Validate form data
     try {
@@ -254,6 +267,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       });
       setCurrentStep('form');
       setPaymentConfirmed(false);
+      setCaptchaToken(null);
+      recaptchaRef.current?.reset();
       
       onClose();
     } catch (error) {
@@ -329,6 +344,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       });
       setCurrentStep('form');
       setPaymentConfirmed(false);
+      setCaptchaToken(null);
+      recaptchaRef.current?.reset();
       
       onClose();
     } catch (error) {
@@ -549,6 +566,19 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         />
       </div>
 
+      {/* CAPTCHA Verification */}
+      <div className="flex justify-center py-2">
+        <ReCAPTCHA
+          ref={recaptchaRef}
+          sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+          onChange={(token) => setCaptchaToken(token)}
+          onExpired={() => setCaptchaToken(null)}
+        />
+      </div>
+      <p className="text-xs text-center text-muted-foreground -mt-2">
+        Please verify you are human to continue
+      </p>
+
       <div className="flex gap-3 pt-4">
         <Button type="submit" className="flex-1" variant="medical">
           <CreditCard className="h-4 w-4 mr-2" />
@@ -765,6 +795,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const handleModalClose = () => {
     setCurrentStep('form');
     setPaymentConfirmed(false);
+    setCaptchaToken(null);
+    recaptchaRef.current?.reset();
     onClose();
   };
 
