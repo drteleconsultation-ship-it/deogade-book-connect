@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar as CalendarIcon, Clock, CheckCircle, CreditCard, ArrowLeft, ExternalLink } from 'lucide-react';
-import { format } from 'date-fns';
+import { Calendar as CalendarIcon, Clock, CheckCircle, CreditCard, ArrowLeft, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import ReCAPTCHA from 'react-google-recaptcha';
+import confetti from 'canvas-confetti';
+import { Progress } from '@/components/ui/progress';
 
 // Validation schema
 const bookingSchema = z.object({
@@ -121,6 +123,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const [currentStep, setCurrentStep] = useState<'form' | 'payment' | 'confirmation'>('form');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [booking, setBooking] = useState<BookingData>({
     name: '',
     age: '',
@@ -137,7 +140,49 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
+  // Fetch booked slots when date changes
+  useEffect(() => {
+    const fetchBookedSlots = async () => {
+      if (!booking.date) return;
+      
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('time_slot')
+        .eq('appointment_date', format(booking.date, 'yyyy-MM-dd'))
+        .eq('status', 'confirmed');
+      
+      if (!error && data) {
+        setBookedSlots(data.map(slot => slot.time_slot));
+      }
+    };
+    
+    fetchBookedSlots();
+  }, [booking.date]);
+
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#1e88e5', '#4db8ff', '#00c853', '#ffd700'],
+    });
+  };
+
+  const getStepNumber = () => {
+    switch (currentStep) {
+      case 'form': return 1;
+      case 'payment': return 2;
+      case 'confirmation': return 3;
+      default: return 1;
+    }
+  };
+
+  const getProgressPercentage = () => {
+    return (getStepNumber() / 3) * 100;
+  };
+
   const timeSlots = generateTimeSlots(booking.consultationType, booking.date);
+  const availableSlots = timeSlots.filter(slot => !bookedSlots.includes(slot));
   const selectedService = services.find(s => s.id === booking.serviceType);
   const amount = selectedService?.price || 0;
 
@@ -245,32 +290,35 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         // Don't throw error here as appointment is already saved
       }
       
+      triggerConfetti();
       toast({
-        title: "Appointment Booked Successfully! ✅",
-        description: `Your ${booking.consultationType} consultation is scheduled for ${format(booking.date!, 'PPP')} at ${booking.timeSlot}. ${response.error ? 'Appointment saved but email notification failed.' : 'Confirmation emails sent.'}`,
+        title: "Appointment Confirmed!",
+        description: "You will receive a confirmation email shortly.",
       });
 
       // Reset form
-      setBooking({
-        name: '',
-        age: '',
-        gender: '',
-        whatsapp: '',
-        email: '',
-        reason: '',
-        consultationType: 'clinic',
-        serviceType: '',
-        date: undefined,
-        timeSlot: '',
-        attachments: undefined,
-        paymentMethod: 'upi',
-      });
-      setCurrentStep('form');
-      setPaymentConfirmed(false);
-      setCaptchaToken(null);
-      recaptchaRef.current?.reset();
-      
-      onClose();
+      setTimeout(() => {
+        setBooking({
+          name: '',
+          age: '',
+          gender: '',
+          whatsapp: '',
+          email: '',
+          reason: '',
+          consultationType: 'clinic',
+          serviceType: '',
+          date: undefined,
+          timeSlot: '',
+          attachments: undefined,
+          paymentMethod: 'upi',
+        });
+        setCurrentStep('form');
+        setPaymentConfirmed(false);
+        setCaptchaToken(null);
+        recaptchaRef.current?.reset();
+        
+        onClose();
+      }, 2000);
     } catch (error) {
       console.error('Booking error');
       toast({
@@ -323,31 +371,34 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
 
       console.log('Email confirmation sent successfully');
       
+      triggerConfetti();
       toast({
-        title: "Appointment Booked Successfully! ✅",
-        description: `Your ${booking.consultationType} consultation is scheduled for ${format(booking.date!, 'PPP')} at ${booking.timeSlot}. Confirmation emails have been sent.`,
+        title: "Appointment Confirmed!",
+        description: "You will receive a confirmation email shortly. You can pay at the clinic.",
       });
 
       // Reset form
-      setBooking({
-        name: '',
-        age: '',
-        gender: '',
-        whatsapp: '',
-        email: '',
-        reason: '',
-        consultationType: 'clinic',
-        serviceType: '',
-        date: undefined,
-        timeSlot: '',
-        paymentMethod: 'upi',
-      });
-      setCurrentStep('form');
-      setPaymentConfirmed(false);
-      setCaptchaToken(null);
-      recaptchaRef.current?.reset();
-      
-      onClose();
+      setTimeout(() => {
+        setBooking({
+          name: '',
+          age: '',
+          gender: '',
+          whatsapp: '',
+          email: '',
+          reason: '',
+          consultationType: 'clinic',
+          serviceType: '',
+          date: undefined,
+          timeSlot: '',
+          paymentMethod: 'upi',
+        });
+        setCurrentStep('form');
+        setPaymentConfirmed(false);
+        setCaptchaToken(null);
+        recaptchaRef.current?.reset();
+        
+        onClose();
+      }, 2000);
     } catch (error) {
       console.error('Booking error');
       toast({
@@ -362,6 +413,15 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
 
   const renderFormStep = () => (
     <form onSubmit={handleFormSubmit} className="space-y-6">
+      {/* Progress Indicator */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 3</span>
+          <span className="text-sm font-medium text-primary">{Math.round(getProgressPercentage())}%</span>
+        </div>
+        <Progress value={getProgressPercentage()} className="h-2" />
+      </div>
+
       {/* Service Type Selection */}
       <div className="space-y-3">
         <Label className="text-base font-semibold">Service Type *</Label>
@@ -462,98 +522,83 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           <Label htmlFor="whatsapp">WhatsApp Number *</Label>
           <Input
             id="whatsapp"
+            type="tel"
             value={booking.whatsapp}
             onChange={(e) => setBooking({ ...booking, whatsapp: e.target.value })}
             required
-            placeholder="+91 XXXXXXXXXX"
+            placeholder="+91 9876543210"
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email">Email Address (Optional)</Label>
+        <Label htmlFor="email">Email (Optional)</Label>
         <Input
           id="email"
           type="email"
           value={booking.email}
           onChange={(e) => setBooking({ ...booking, email: e.target.value })}
-          placeholder="your.email@example.com (optional)"
+          placeholder="your.email@example.com"
         />
       </div>
 
+      {/* Date Selection */}
       <div className="space-y-2">
-        <Label htmlFor="attachments">Medical Documents (Optional)</Label>
-        <Input
-          id="attachments"
-          type="file"
-          multiple
-          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-          onChange={(e) => {
-            const files = Array.from(e.target.files || []);
-            setBooking({ ...booking, attachments: files });
-          }}
-          className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
-        />
-        <p className="text-xs text-muted-foreground">
-          Upload lab reports, medical documents, prescriptions (PDF, JPG, PNG, DOC - Max 10MB per file)
-        </p>
+        <Label>Appointment Date *</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !booking.date && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {booking.date ? format(booking.date, 'PPP') : <span>Pick a date</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={booking.date}
+              onSelect={(date) => setBooking({ ...booking, date, timeSlot: '' })}
+              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
-      {/* Date and Time Selection */}
-      <div className="grid md:grid-cols-2 gap-4">
+      {/* Time Slot Selection */}
+      {booking.date && (
         <div className="space-y-2">
-          <Label>Appointment Date *</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !booking.date && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {booking.date ? format(booking.date, "PPP") : "Select date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={booking.date}
-                onSelect={(date) => setBooking({ ...booking, date })}
-                disabled={(date) => {
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  return date < today;
-                }}
-                initialFocus
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
+          <Label>Select Time Slot *</Label>
+          <RadioGroup value={booking.timeSlot} onValueChange={(value) => setBooking({...booking, timeSlot: value})}>
+            <div className="grid grid-cols-3 gap-2">
+              {availableSlots.length > 0 ? (
+                availableSlots.map((slot) => (
+                  <div key={slot} className="flex items-center">
+                    <RadioGroupItem value={slot} id={slot} className="peer sr-only" />
+                    <Label
+                      htmlFor={slot}
+                      className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-sm"
+                    >
+                      {slot}
+                    </Label>
+                  </div>
+                ))
+              ) : (
+                <p className="col-span-3 text-center text-muted-foreground py-4">
+                  No available slots for this date. Please select another date.
+                </p>
+              )}
+            </div>
+          </RadioGroup>
         </div>
-        
-        <div className="space-y-2">
-          <Label>Time Slot * <span className="text-xs text-muted-foreground">(Max 2 consultations per slot)</span></Label>
-          <Select onValueChange={(value) => setBooking({ ...booking, timeSlot: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select time" />
-            </SelectTrigger>
-            <SelectContent className="max-h-60">
-              {timeSlots.map((time) => (
-                <SelectItem key={time} value={time}>
-                  <Clock className="inline mr-2 h-4 w-4" />
-                  {time}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Note: Maximum 2 consultations can be booked per time slot
-          </p>
-        </div>
-      </div>
+      )}
 
+      {/* Reason for Visit */}
       <div className="space-y-2">
         <Label htmlFor="reason">Reason for Consultation *</Label>
         <Textarea
@@ -561,7 +606,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           value={booking.reason}
           onChange={(e) => setBooking({ ...booking, reason: e.target.value })}
           required
-          placeholder="Please describe your symptoms or reason for consultation..."
+          placeholder="Please describe your symptoms or reason for visit"
           rows={3}
         />
       </div>
@@ -581,216 +626,212 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
 
       <div className="flex gap-3 pt-4">
         <Button type="submit" className="flex-1" variant="medical">
-          <CreditCard className="h-4 w-4 mr-2" />
-          Proceed to Payment
-        </Button>
-        <Button type="button" variant="outline" onClick={onClose}>
-          Cancel
+          Continue to Payment
         </Button>
       </div>
     </form>
   );
 
-  const renderPaymentStep = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-2xl font-bold text-primary mb-4">Payment Details</h3>
-        <div className="bg-muted/50 rounded-lg p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-lg">Service:</span>
-            <span className="font-semibold">{selectedService?.name}</span>
+  const renderPaymentStep = () => {
+    return (
+      <div className="space-y-6">
+        {/* Progress Indicator */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 3</span>
+            <span className="text-sm font-medium text-primary">{Math.round(getProgressPercentage())}%</span>
           </div>
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-lg">Amount:</span>
-            <span className="text-2xl font-bold text-primary">₹{amount}</span>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Includes free follow-up for 7-8 days
+          <Progress value={getProgressPercentage()} className="h-2" />
+        </div>
+
+        {/* Appointment Summary */}
+        <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+          <h3 className="font-semibold text-lg">Appointment Summary</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Service:</span>
+              <span className="font-medium">{selectedService?.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Type:</span>
+              <span className="font-medium capitalize">{booking.consultationType}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Date:</span>
+              <span className="font-medium">{booking.date && format(booking.date, 'PPP')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Time:</span>
+              <span className="font-medium">{booking.timeSlot}</span>
+            </div>
+            <div className="flex justify-between pt-2 border-t">
+              <span className="font-semibold">Amount:</span>
+              <span className="font-bold text-primary text-lg">₹{amount}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Payment Method Selection */}
-      <div className="space-y-4">
-        <h4 className="text-lg font-semibold text-center">Select Payment Method</h4>
-        <RadioGroup
-          value={booking.paymentMethod}
-          onValueChange={(value: 'upi' | 'pay-later') => 
-            setBooking({ ...booking, paymentMethod: value })
-          }
-          className="space-y-3"
-        >
-          <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-            <RadioGroupItem value="upi" id="upi-payment" className="mt-1" />
-            <Label htmlFor="upi-payment" className="flex-1 cursor-pointer">
-              <div className="font-semibold">Pay via UPI Now</div>
-              <div className="text-sm text-muted-foreground">Complete payment instantly using UPI</div>
-            </Label>
-          </div>
-          <div className="flex items-start space-x-3 border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-            <RadioGroupItem value="pay-later" id="pay-later" className="mt-1" />
-            <Label htmlFor="pay-later" className="flex-1 cursor-pointer">
-              <div className="font-semibold">Pay when consultation starts with doctor</div>
-              <div className="text-sm text-muted-foreground">Pay directly during your appointment</div>
-            </Label>
-          </div>
-        </RadioGroup>
-      </div>
-
-      {booking.paymentMethod === 'upi' && (
-        <div className="bg-card border border-border rounded-lg p-6">
-          <h4 className="text-lg font-semibold mb-4 text-center">Pay via UPI</h4>
-          <div className="space-y-4">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-4">
-                UPI ID: <span className="font-mono font-semibold">7415379845@okbizaxis</span>
-              </p>
-              
-              <Button 
-                className="w-full mb-4" 
-                variant="medical"
-                onClick={() => window.open(generateUPILink(), '_blank')}
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Pay ₹{amount} via UPI
-              </Button>
-              
-              <p className="text-xs text-muted-foreground mb-4">
-                Click above to open your UPI app and complete the payment
-              </p>
-            </div>
-            
-            <div className="border-t pt-4">
-              <p className="text-sm text-muted-foreground text-center mb-4">
-                After completing payment, click below to confirm
-              </p>
-              <Button 
-                onClick={handlePaymentConfirmation}
-                className="w-full"
-                variant="outline"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    Confirming Appointment...
+        {/* Payment Options */}
+        <div className="space-y-4">
+          <Label className="text-base font-semibold">Payment Method</Label>
+          
+          <RadioGroup
+            value={booking.paymentMethod}
+            onValueChange={(value: 'upi' | 'pay-later') => setBooking({ ...booking, paymentMethod: value })}
+            className="space-y-3"
+          >
+            {/* UPI Payment Option */}
+            <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+              <RadioGroupItem value="upi" id="upi" className="mt-1" />
+              <div className="flex-1">
+                <Label htmlFor="upi" className="font-semibold cursor-pointer">
+                  Pay Now via UPI
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Quick and secure payment using UPI apps
+                </p>
+                {booking.paymentMethod === 'upi' && (
+                  <div className="mt-3 space-y-3">
+                    <div className="p-3 bg-background rounded border">
+                      <p className="text-sm font-medium mb-2">UPI ID: 7415379845@okbizaxis</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        asChild
+                      >
+                        <a href={generateUPILink()} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Open UPI App
+                        </a>
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      After making the payment, click "I've Paid" to confirm your appointment
+                    </p>
                   </div>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    I have completed the payment
-                  </>
                 )}
-              </Button>
+              </div>
+            </div>
+
+            {/* Pay Later Option */}
+            <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
+              <RadioGroupItem value="pay-later" id="pay-later" className="mt-1" />
+              <div className="flex-1">
+                <Label htmlFor="pay-later" className="font-semibold cursor-pointer">
+                  Pay at Clinic
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Pay in cash at the time of your visit
+                </p>
+              </div>
+            </div>
+          </RadioGroup>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setCurrentStep('form')}
+            className="flex-1"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          <Button
+            type="button"
+            variant="medical"
+            onClick={handlePaymentConfirmation}
+            disabled={isSubmitting}
+            className="flex-1"
+          >
+            {isSubmitting ? "Processing..." : booking.paymentMethod === 'upi' ? "I've Paid" : "Confirm Appointment"}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderConfirmationStep = () => {
+    return (
+      <div className="space-y-6">
+        {/* Progress Indicator */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium text-muted-foreground">Step {getStepNumber()} of 3</span>
+            <span className="text-sm font-medium text-primary">{Math.round(getProgressPercentage())}%</span>
+          </div>
+          <Progress value={getProgressPercentage()} className="h-2" />
+        </div>
+        
+        {/* Success Animation */}
+        <div className="flex justify-center py-6">
+          <div className="relative">
+            <CheckCircle2 className="h-20 w-20 text-success animate-checkmark" />
+          </div>
+        </div>
+
+        <div className="text-center space-y-4">
+          <h3 className="text-2xl font-bold">Appointment Confirmed!</h3>
+          <p className="text-muted-foreground">
+            Your consultation has been successfully booked.
+          </p>
+        </div>
+
+        {/* Appointment Details */}
+        <div className="bg-muted/50 p-6 rounded-lg space-y-3">
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Patient Name:</span>
+              <span className="font-medium">{booking.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Service:</span>
+              <span className="font-medium">{selectedService?.name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Date:</span>
+              <span className="font-medium">{booking.date && format(booking.date, 'PPP')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Time:</span>
+              <span className="font-medium">{booking.timeSlot}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Type:</span>
+              <span className="font-medium capitalize">{booking.consultationType}</span>
+            </div>
+            <div className="flex justify-between pt-2 border-t">
+              <span className="font-semibold">Amount:</span>
+              <span className="font-bold text-primary text-lg">₹{amount}</span>
             </div>
           </div>
         </div>
-      )}
 
-      {booking.paymentMethod === 'pay-later' && (
-        <div className="bg-card border border-border rounded-lg p-6">
-          <div className="text-center space-y-4">
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                You have selected to pay during consultation. Please bring the exact amount (₹{amount}) when you visit the clinic or keep it ready for online payment at the time of consultation.
-              </p>
-            </div>
-            <Button 
-              onClick={handlePaymentConfirmation}
-              className="w-full"
-              variant="medical"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
-                  Confirming Appointment...
-                </div>
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Confirm Appointment
-                </>
-              )}
-            </Button>
-          </div>
+        {/* Next Steps */}
+        <div className="bg-primary/10 p-4 rounded-lg space-y-2">
+          <p className="font-semibold text-sm">📧 Next Steps:</p>
+          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+            <li>Check your email for confirmation details</li>
+            <li>You'll receive a WhatsApp reminder before your appointment</li>
+            <li>Please arrive 10 minutes early for clinic visits</li>
+          </ul>
         </div>
-      )}
 
-      <div className="flex gap-3">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => setCurrentStep('form')}
-          className="flex-1"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Form
-        </Button>
-        <Button type="button" variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-      </div>
-    </div>
-  );
-
-  const renderConfirmationStep = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-        <h3 className="text-2xl font-bold text-primary mb-4">Confirm Your Appointment</h3>
-      </div>
-
-      <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div><strong>Service:</strong></div>
-          <div>{selectedService?.name}</div>
-          
-          <div><strong>Type:</strong></div>
-          <div className="capitalize">{booking.consultationType}</div>
-          
-          <div><strong>Date:</strong></div>
-          <div>{booking.date && format(booking.date, 'PPP')}</div>
-          
-          <div><strong>Time:</strong></div>
-          <div>{booking.timeSlot}</div>
-          
-          <div><strong>Amount Paid:</strong></div>
-          <div className="font-semibold text-primary">₹{amount}</div>
-        </div>
-      </div>
-
-      <div className="flex gap-3">
         <Button
-          onClick={handleFinalSubmit}
-          disabled={isSubmitting}
-          className="flex-1"
+          type="button"
+          onClick={handleModalClose}
+          className="w-full"
           variant="medical"
         >
-          {isSubmitting ? (
-            <div className="flex items-center gap-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              Confirming...
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Confirm Appointment
-            </div>
-          )}
-        </Button>
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={() => setCurrentStep('payment')}
-          disabled={isSubmitting}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          Done
         </Button>
       </div>
-    </div>
-  );
+    );
+  };
 
   const handleModalClose = () => {
     setCurrentStep('form');
@@ -802,16 +843,15 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleModalClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-primary flex items-center gap-2">
-            <CalendarIcon className="h-6 w-6" />
+          <DialogTitle className="text-2xl font-bold">
             {currentStep === 'form' && 'Book Your Appointment'}
-            {currentStep === 'payment' && 'Payment'}
-            {currentStep === 'confirmation' && 'Confirm Booking'}
+            {currentStep === 'payment' && 'Payment Details'}
+            {currentStep === 'confirmation' && 'Booking Confirmed'}
           </DialogTitle>
         </DialogHeader>
-
+        
         {currentStep === 'form' && renderFormStep()}
         {currentStep === 'payment' && renderPaymentStep()}
         {currentStep === 'confirmation' && renderConfirmationStep()}
