@@ -42,6 +42,7 @@ export type Database = {
         Row: {
           age: string
           appointment_date: string
+          attachment_url: string | null
           consultation_type: string
           created_at: string
           email: string | null
@@ -59,6 +60,7 @@ export type Database = {
         Insert: {
           age: string
           appointment_date: string
+          attachment_url?: string | null
           consultation_type: string
           created_at?: string
           email?: string | null
@@ -76,6 +78,7 @@ export type Database = {
         Update: {
           age?: string
           appointment_date?: string
+          attachment_url?: string | null
           consultation_type?: string
           created_at?: string
           email?: string | null
@@ -124,14 +127,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      cleanup_old_rate_limits: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      is_admin: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      is_admin: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

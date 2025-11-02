@@ -9,7 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar as CalendarIcon, Clock, CheckCircle, CreditCard, ArrowLeft, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, CheckCircle, CreditCard, ArrowLeft, ExternalLink, CheckCircle2, Upload, FileText } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +32,7 @@ const bookingSchema = z.object({
   serviceType: z.string().min(1, "Service type is required"),
   date: z.date({ required_error: "Appointment date is required" }),
   timeSlot: z.string().min(1, "Time slot is required"),
+  attachment: z.instanceof(File).optional(),
 });
 
 // Import background images
@@ -57,7 +58,7 @@ interface BookingData {
   serviceType: string;
   date: Date | undefined;
   timeSlot: string;
-  attachments?: File[];
+  attachment?: File;
   paymentMethod: 'upi' | 'pay-later';
 }
 
@@ -124,6 +125,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const [currentStep, setCurrentStep] = useState<'form' | 'payment' | 'confirmation'>('form');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [booking, setBooking] = useState<BookingData>({
     name: '',
     age: '',
@@ -238,6 +240,32 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     setIsSubmitting(true);
 
     try {
+      let attachmentUrl = null;
+      
+      // Upload file if selected
+      if (booking.attachment) {
+        setUploadingFile(true);
+        const fileExt = booking.attachment.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('medical-documents')
+          .upload(filePath, booking.attachment);
+
+        if (uploadError) {
+          console.error('File upload error:', uploadError);
+          toast({
+            title: "File Upload Failed",
+            description: "Could not upload attachment. Proceeding without it.",
+            variant: "destructive",
+          });
+        } else {
+          attachmentUrl = filePath;
+        }
+        setUploadingFile(false);
+      }
+
       // Save appointment to database
       const appointmentData = {
         patient_name: booking.name,
@@ -251,7 +279,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         appointment_date: booking.date!.toISOString().split('T')[0],
         time_slot: booking.timeSlot,
         status: 'pending',
-        payment_method: booking.paymentMethod
+        payment_method: booking.paymentMethod,
+        attachment_url: attachmentUrl
       };
 
       const { error: dbError } = await supabase
@@ -309,7 +338,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           serviceType: '',
           date: undefined,
           timeSlot: '',
-          attachments: undefined,
+          attachment: undefined,
           paymentMethod: 'upi',
         });
         setCurrentStep('form');
@@ -542,20 +571,23 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         />
       </div>
 
-      {/* Date Selection */}
-      <div className="space-y-2">
-        <Label>Appointment Date *</Label>
+      {/* Date Selection Section */}
+      <div className="space-y-4 p-4 border-2 border-primary/20 rounded-lg bg-primary/5">
+        <div className="flex items-center gap-2 mb-2">
+          <CalendarIcon className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold text-lg">Select Appointment Date</h3>
+        </div>
         <Popover>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               className={cn(
-                "w-full justify-start text-left font-normal",
+                "w-full justify-start text-left font-normal h-12",
                 !booking.date && "text-muted-foreground"
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {booking.date ? format(booking.date, 'PPP') : <span>Pick a date</span>}
+              {booking.date ? format(booking.date, 'PPP') : <span>Pick your preferred date</span>}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -568,35 +600,107 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
             />
           </PopoverContent>
         </Popover>
+        <p className="text-xs text-muted-foreground">
+          Select your preferred consultation date
+        </p>
       </div>
 
-      {/* Time Slot Selection */}
-      {booking.date && (
-        <div className="space-y-2">
-          <Label>Select Time Slot *</Label>
-          <RadioGroup value={booking.timeSlot} onValueChange={(value) => setBooking({...booking, timeSlot: value})}>
-            <div className="grid grid-cols-3 gap-2">
-              {availableSlots.length > 0 ? (
-                availableSlots.map((slot) => (
-                  <div key={slot} className="flex items-center">
-                    <RadioGroupItem value={slot} id={slot} className="peer sr-only" />
-                    <Label
-                      htmlFor={slot}
-                      className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-sm"
-                    >
-                      {slot}
-                    </Label>
-                  </div>
-                ))
-              ) : (
-                <p className="col-span-3 text-center text-muted-foreground py-4">
-                  No available slots for this date. Please select another date.
-                </p>
-              )}
-            </div>
-          </RadioGroup>
+      {/* Time Slot Selection Section */}
+      <div className="space-y-4 p-4 border-2 border-primary/20 rounded-lg bg-primary/5">
+        <div className="flex items-center gap-2 mb-2">
+          <Clock className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold text-lg">Select Time Slot</h3>
         </div>
-      )}
+        {booking.date ? (
+          <>
+            <RadioGroup value={booking.timeSlot} onValueChange={(value) => setBooking({...booking, timeSlot: value})}>
+              <div className="grid grid-cols-3 gap-2">
+                {availableSlots.length > 0 ? (
+                  availableSlots.map((slot) => (
+                    <div key={slot} className="flex items-center">
+                      <RadioGroupItem value={slot} id={slot} className="peer sr-only" />
+                      <Label
+                        htmlFor={slot}
+                        className="flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer text-sm"
+                      >
+                        {slot}
+                      </Label>
+                    </div>
+                  ))
+                ) : (
+                  <p className="col-span-3 text-center text-muted-foreground py-4">
+                    No available slots for this date. Please select another date.
+                  </p>
+                )}
+              </div>
+            </RadioGroup>
+            <p className="text-xs text-muted-foreground">
+              {availableSlots.length > 0 
+                ? `${availableSlots.length} slots available`
+                : "No slots available for this date"}
+            </p>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            Please select a date first to view available time slots
+          </p>
+        )}
+      </div>
+
+      {/* File Upload Section */}
+      <div className="space-y-4 p-4 border-2 border-primary/20 rounded-lg bg-primary/5">
+        <div className="flex items-center gap-2 mb-2">
+          <Upload className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold text-lg">Medical Documents (Optional)</h3>
+        </div>
+        <div className="space-y-2">
+          <Input
+            id="attachment"
+            type="file"
+            accept="image/jpeg,image/png,image/jpg,image/webp,application/pdf"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                if (file.size > 5242880) {
+                  toast({
+                    title: "File Too Large",
+                    description: "File size must be less than 5MB",
+                    variant: "destructive",
+                  });
+                  e.target.value = '';
+                  return;
+                }
+                setBooking({ ...booking, attachment: file });
+              } else {
+                setBooking({ ...booking, attachment: undefined });
+              }
+            }}
+            className="h-12"
+          />
+          <p className="text-xs text-muted-foreground">
+            Optional: Upload medical reports, prescriptions, or relevant images (Max 5MB, JPG/PNG/PDF)
+          </p>
+          {booking.attachment && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-primary bg-background p-2 rounded border">
+              <FileText className="h-4 w-4" />
+              <span className="flex-1 truncate">{booking.attachment.name}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setBooking({ ...booking, attachment: undefined });
+                  const input = document.getElementById('attachment') as HTMLInputElement;
+                  if (input) input.value = '';
+                }}
+                className="h-6 px-2"
+              >
+                Remove
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Reason for Visit */}
       <div className="space-y-2">
@@ -835,6 +939,20 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
 
   const handleModalClose = () => {
     setCurrentStep('form');
+    setBooking({
+      name: '',
+      age: '',
+      gender: '',
+      whatsapp: '',
+      email: '',
+      reason: '',
+      consultationType: 'clinic',
+      serviceType: '',
+      date: undefined,
+      timeSlot: '',
+      attachment: undefined,
+      paymentMethod: 'upi',
+    });
     setPaymentConfirmed(false);
     setCaptchaToken(null);
     recaptchaRef.current?.reset();
