@@ -26,6 +26,7 @@ interface BookingEmailRequest {
   date: string;
   timeSlot: string;
   paymentMethod?: string;
+  attachmentUrls?: string[];
 }
 
 // Input validation and sanitization
@@ -290,6 +291,31 @@ const handler = async (req: Request): Promise<Response> => {
       </div>
     `;
 
+    // Prepare attachments for email if any
+    const attachments = [];
+    if (bookingData.attachmentUrls && bookingData.attachmentUrls.length > 0) {
+      for (const url of bookingData.attachmentUrls) {
+        try {
+          const { data: fileData, error: downloadError } = await supabase.storage
+            .from('medical-documents')
+            .download(url);
+          
+          if (!downloadError && fileData) {
+            const arrayBuffer = await fileData.arrayBuffer();
+            const buffer = new Uint8Array(arrayBuffer);
+            const base64Content = btoa(String.fromCharCode(...buffer));
+            
+            attachments.push({
+              filename: url.split('/').pop() || 'document',
+              content: base64Content,
+            });
+          }
+        } catch (err) {
+          console.error(`Error downloading attachment ${url}:`, err);
+        }
+      }
+    }
+
     let customerEmail;
     
     // Send customer confirmation email only if email is provided
@@ -299,6 +325,7 @@ const handler = async (req: Request): Promise<Response> => {
         to: [bookingData.email],
         subject: 'Appointment Confirmation - Dr. Deogade Clinic',
         html: customerEmailContent,
+        attachments: attachments.length > 0 ? attachments : undefined,
       });
 
       console.log('Customer email sent successfully');
@@ -310,6 +337,7 @@ const handler = async (req: Request): Promise<Response> => {
       to: ['drteleconsultation@gmail.com'],
       subject: `New Appointment: ${bookingData.serviceName} - ${bookingData.date} at ${bookingData.timeSlot}`,
       html: clinicEmailContent,
+      attachments: attachments.length > 0 ? attachments : undefined,
     });
 
     console.log('Clinic email sent successfully');

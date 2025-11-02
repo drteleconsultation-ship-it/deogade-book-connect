@@ -32,7 +32,7 @@ const bookingSchema = z.object({
   serviceType: z.string().min(1, "Service type is required"),
   date: z.date({ required_error: "Appointment date is required" }),
   timeSlot: z.string().min(1, "Time slot is required"),
-  attachment: z.instanceof(File).optional(),
+  attachments: z.array(z.instanceof(File)).max(5, "Maximum 5 files allowed").optional(),
 });
 
 // Import background images
@@ -58,7 +58,7 @@ interface BookingData {
   serviceType: string;
   date: Date | undefined;
   timeSlot: string;
-  attachment?: File;
+  attachments: File[];
   paymentMethod: 'upi' | 'pay-later';
 }
 
@@ -137,6 +137,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     serviceType: '',
     date: undefined,
     timeSlot: '',
+    attachments: [],
     paymentMethod: 'upi',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -240,29 +241,33 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     setIsSubmitting(true);
 
     try {
-      let attachmentUrl = null;
+      const attachmentUrls: string[] = [];
       
-      // Upload file if selected
-      if (booking.attachment) {
+      // Upload files if selected
+      if (booking.attachments.length > 0) {
         setUploadingFile(true);
-        const fileExt = booking.attachment.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `${fileName}`;
+        
+        for (const file of booking.attachments) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const filePath = `${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('medical-documents')
-          .upload(filePath, booking.attachment);
+          const { error: uploadError } = await supabase.storage
+            .from('medical-documents')
+            .upload(filePath, file);
 
-        if (uploadError) {
-          console.error('File upload error:', uploadError);
-          toast({
-            title: "File Upload Failed",
-            description: "Could not upload attachment. Proceeding without it.",
-            variant: "destructive",
-          });
-        } else {
-          attachmentUrl = filePath;
+          if (uploadError) {
+            console.error('File upload error:', uploadError);
+            toast({
+              title: "File Upload Failed",
+              description: `Could not upload ${file.name}. Continuing with other files.`,
+              variant: "destructive",
+            });
+          } else {
+            attachmentUrls.push(filePath);
+          }
         }
+        
         setUploadingFile(false);
       }
 
@@ -280,7 +285,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         time_slot: booking.timeSlot,
         status: 'pending',
         payment_method: booking.paymentMethod,
-        attachment_url: attachmentUrl
+        attachment_urls: attachmentUrls
       };
 
       const { error: dbError } = await supabase
@@ -309,6 +314,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           date: format(booking.date!, 'PPP'),
           timeSlot: booking.timeSlot,
           paymentMethod: booking.paymentMethod,
+          attachmentUrls: attachmentUrls,
         },
       });
 
@@ -338,7 +344,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           serviceType: '',
           date: undefined,
           timeSlot: '',
-          attachment: undefined,
+          attachments: [],
           paymentMethod: 'upi',
         });
         setCurrentStep('form');
@@ -419,6 +425,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           serviceType: '',
           date: undefined,
           timeSlot: '',
+          attachments: [],
           paymentMethod: 'upi',
         });
         setCurrentStep('form');
@@ -655,48 +662,69 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         </div>
         <div className="space-y-2">
           <Input
-            id="attachment"
+            id="attachments"
             type="file"
             accept="image/jpeg,image/png,image/jpg,image/webp,application/pdf"
+            multiple
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
+              const files = Array.from(e.target.files || []);
+              
+              if (booking.attachments.length + files.length > 5) {
+                toast({
+                  title: "Too Many Files",
+                  description: "Maximum 5 files allowed",
+                  variant: "destructive",
+                });
+                e.target.value = '';
+                return;
+              }
+              
+              const validFiles: File[] = [];
+              for (const file of files) {
                 if (file.size > 5242880) {
                   toast({
                     title: "File Too Large",
-                    description: "File size must be less than 5MB",
+                    description: `${file.name} exceeds 5MB limit`,
                     variant: "destructive",
                   });
-                  e.target.value = '';
-                  return;
+                  continue;
                 }
-                setBooking({ ...booking, attachment: file });
-              } else {
-                setBooking({ ...booking, attachment: undefined });
+                validFiles.push(file);
               }
+              
+              if (validFiles.length > 0) {
+                setBooking({ ...booking, attachments: [...booking.attachments, ...validFiles] });
+              }
+              e.target.value = '';
             }}
-            className="h-12"
+            className="cursor-pointer h-12"
           />
           <p className="text-xs text-muted-foreground">
-            Optional: Upload medical reports, prescriptions, or relevant images (Max 5MB, JPG/PNG/PDF)
+            Optional: Upload up to 5 medical reports, prescriptions, or relevant images (Max 5MB each, JPG/PNG/PDF)
           </p>
-          {booking.attachment && (
-            <div className="mt-2 flex items-center gap-2 text-sm text-primary bg-background p-2 rounded border">
-              <FileText className="h-4 w-4" />
-              <span className="flex-1 truncate">{booking.attachment.name}</span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setBooking({ ...booking, attachment: undefined });
-                  const input = document.getElementById('attachment') as HTMLInputElement;
-                  if (input) input.value = '';
-                }}
-                className="h-6 px-2"
-              >
-                Remove
-              </Button>
+          {booking.attachments.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {booking.attachments.map((file, index) => (
+                <div key={index} className="flex items-center gap-2 text-sm text-primary bg-background p-2 rounded border">
+                  <FileText className="h-4 w-4 flex-shrink-0" />
+                  <span className="flex-1 truncate">{file.name}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const newAttachments = booking.attachments.filter((_, i) => i !== index);
+                      setBooking({ ...booking, attachments: newAttachments });
+                    }}
+                    className="h-6 px-2"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+              <p className="text-xs text-muted-foreground">
+                {booking.attachments.length} / 5 files selected
+              </p>
             </div>
           )}
         </div>
@@ -950,7 +978,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       serviceType: '',
       date: undefined,
       timeSlot: '',
-      attachment: undefined,
+      attachments: [],
       paymentMethod: 'upi',
     });
     setPaymentConfirmed(false);

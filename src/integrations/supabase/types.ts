@@ -42,7 +42,7 @@ export type Database = {
         Row: {
           age: string
           appointment_date: string
-          attachment_url: string | null
+          attachment_urls: string[] | null
           consultation_type: string
           created_at: string
           email: string | null
@@ -60,7 +60,7 @@ export type Database = {
         Insert: {
           age: string
           appointment_date: string
-          attachment_url?: string | null
+          attachment_urls?: string[] | null
           consultation_type: string
           created_at?: string
           email?: string | null
@@ -78,7 +78,7 @@ export type Database = {
         Update: {
           age?: string
           appointment_date?: string
-          attachment_url?: string | null
+          attachment_urls?: string[] | null
           consultation_type?: string
           created_at?: string
           email?: string | null
