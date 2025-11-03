@@ -341,6 +341,54 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     console.log('Clinic email sent successfully');
+    
+    // Trigger Zapier webhook for Google Calendar integration
+    const zapierWebhookUrl = Deno.env.get('ZAPIER_WEBHOOK_URL');
+    if (zapierWebhookUrl) {
+      try {
+        console.log('Triggering Zapier webhook for calendar integration');
+        const calendarData = {
+          summary: `${sanitizedServiceName} - ${sanitizedName}`,
+          description: `Patient: ${sanitizedName}\nAge: ${bookingData.age}\nGender: ${bookingData.gender}\nWhatsApp: ${bookingData.whatsapp}${bookingData.email ? `\nEmail: ${sanitizedEmail}` : ''}\nReason: ${sanitizedReason}\nConsultation Type: ${bookingData.consultationType}\nPayment: ${paymentMethodText}`,
+          location: bookingData.consultationType === 'online' ? 'Online Consultation' : 'Dr. Deogade Clinic, 419/B, Dev Arch Apartment, near Krida Chowk, Nagpur',
+          start: {
+            dateTime: `${bookingData.date}T${bookingData.timeSlot}:00`,
+            timeZone: 'Asia/Kolkata'
+          },
+          end: {
+            dateTime: `${bookingData.date}T${bookingData.timeSlot}:00`,
+            timeZone: 'Asia/Kolkata'
+          },
+          attendees: [
+            { email: 'drteleconsultation@gmail.com' },
+            ...(bookingData.email ? [{ email: bookingData.email }] : [])
+          ],
+          patientName: sanitizedName,
+          age: bookingData.age,
+          gender: bookingData.gender,
+          whatsapp: bookingData.whatsapp,
+          email: sanitizedEmail,
+          reason: sanitizedReason,
+          consultationType: bookingData.consultationType,
+          serviceName: sanitizedServiceName,
+          appointmentDate: bookingData.date,
+          timeSlot: bookingData.timeSlot
+        };
+
+        const zapierResponse = await fetch(zapierWebhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(calendarData),
+        });
+
+        console.log('Zapier webhook triggered successfully, status:', zapierResponse.status);
+      } catch (zapierError) {
+        console.error('Error triggering Zapier webhook:', zapierError);
+        // Don't fail the entire request if Zapier fails
+      }
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
