@@ -143,6 +143,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
+  const [timePopoverOpen, setTimePopoverOpen] = useState(false);
 
   // Fetch booked slots count when date changes
   useEffect(() => {
@@ -599,7 +601,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           <CalendarIcon className="h-5 w-5 text-primary" />
           <h3 className="font-semibold text-lg">Select Appointment Date</h3>
         </div>
-        <Popover>
+        <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -616,7 +618,10 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
             <Calendar
               mode="single"
               selected={booking.date}
-              onSelect={(date) => setBooking({ ...booking, date, timeSlot: '' })}
+              onSelect={(date) => {
+                setBooking({ ...booking, date, timeSlot: '' });
+                setDatePopoverOpen(false);
+              }}
               disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
               initialFocus
             />
@@ -634,7 +639,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           <h3 className="font-semibold text-lg">Select a time</h3>
         </div>
         {booking.date ? (
-          <Popover>
+          <Popover open={timePopoverOpen} onOpenChange={setTimePopoverOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -653,7 +658,10 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
             </PopoverTrigger>
             <PopoverContent className="w-full p-0" align="start">
               <div className="p-4">
-                <RadioGroup value={booking.timeSlot} onValueChange={(value) => setBooking({...booking, timeSlot: value})}>
+                <RadioGroup value={booking.timeSlot} onValueChange={(value) => {
+                  setBooking({...booking, timeSlot: value});
+                  setTimePopoverOpen(false);
+                }}>
                   <div className="space-y-1 max-h-[400px] overflow-y-auto">
                     {timeSlots.map((slot) => {
                       const maxCapacity = 2;
