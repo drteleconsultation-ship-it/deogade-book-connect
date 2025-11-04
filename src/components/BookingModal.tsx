@@ -815,6 +815,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
           onChange={(token) => setCaptchaToken(token)}
           onExpired={() => setCaptchaToken(null)}
+          size="compact"
         />
       </div>
       <p className="text-xs text-center text-muted-foreground -mt-2">
