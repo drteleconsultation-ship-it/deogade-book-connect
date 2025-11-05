@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, User, Phone, Mail, FileText, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, User, Phone, Mail, FileText, ArrowLeft, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -98,6 +98,48 @@ const AdminDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Set up realtime subscription for new appointments
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('appointments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments'
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setAppointments(prev => [...prev, payload.new as Appointment]);
+            toast({
+              title: "New Appointment",
+              description: `New appointment from ${(payload.new as Appointment).patient_name}`,
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            setAppointments(prev => prev.map(apt => 
+              apt.id === payload.new.id ? payload.new as Appointment : apt
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setAppointments(prev => prev.filter(apt => apt.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const openWhatsApp = (phoneNumber: string, patientName: string) => {
+    const message = encodeURIComponent(`Hello ${patientName}, this is Dr. Teleconsultation. Regarding your appointment...`);
+    const whatsappUrl = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const updateAppointmentStatus = async (id: string, status: string) => {
@@ -234,8 +276,8 @@ const AdminDashboard: React.FC = () => {
             ) : (
               <div className="space-y-4">
                 {appointments.map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 flex-1">
+                <div key={appointment.id} className="flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 border rounded-lg gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-4 flex-1 w-full">
                       <div>
                         <p className="font-medium">{appointment.patient_name}</p>
                         <p className="text-sm text-muted-foreground">{appointment.age}Y, {appointment.gender}</p>
@@ -249,7 +291,18 @@ const AdminDashboard: React.FC = () => {
                         <p className="text-sm text-muted-foreground">{appointment.service_type}</p>
                       </div>
                       <div>
-                        <p className="text-sm">{appointment.whatsapp}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm">{appointment.whatsapp}</p>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => openWhatsApp(appointment.whatsapp, appointment.patient_name)}
+                            title="Contact on WhatsApp"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
                         {appointment.email && <p className="text-sm text-muted-foreground">{appointment.email}</p>}
                       </div>
                       <div>
@@ -261,7 +314,7 @@ const AdminDashboard: React.FC = () => {
                         </Badge>
                       </div>
                     </div>
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex flex-wrap gap-2">
                       {appointment.status === 'pending' && (
                         <Button
                           size="sm"
@@ -274,10 +327,10 @@ const AdminDashboard: React.FC = () => {
                       {(appointment.status === 'confirmed' || appointment.status === 'pending') && (
                         <Button
                           size="sm"
-                          variant="outline"
+                          className="bg-green-600 hover:bg-green-700 text-white"
                           onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
                         >
-                          Complete
+                          ✅ Complete
                         </Button>
                       )}
                       {appointment.status !== 'cancelled' && appointment.status !== 'completed' && (
