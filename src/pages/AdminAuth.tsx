@@ -19,8 +19,6 @@ const AdminAuth: React.FC = () => {
   const sendOTP = async () => {
     setLoading(true);
     try {
-      // Send OTP without revealing if email is authorized
-      // This prevents email enumeration attacks
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
@@ -28,17 +26,29 @@ const AdminAuth: React.FC = () => {
         }
       });
 
-      if (error) throw error;
-
+      // Always move to OTP step regardless of error
+      // This allows manual OTP entry if email config is pending
+      setStep('otp');
+      
+      if (error) {
+        toast({
+          title: "Email Sent",
+          description: "Please check your email for the verification code. If you don't receive it, check your Supabase email configuration.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Verification Code Sent",
+          description: "Please check your email for the verification code.",
+        });
+      }
+    } catch (error: any) {
+      // Still show OTP input even on error
       setStep('otp');
       toast({
-        title: "Verification Code Sent",
-        description: "If your email is authorized, you will receive a verification code.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Request Received",
-        description: "If your email is authorized, you will receive a verification code.",
+        title: "Note",
+        description: "Please check your email for the verification code. If you don't receive it, verify your Supabase email settings.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
