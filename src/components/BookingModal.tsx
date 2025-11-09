@@ -206,12 +206,37 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const selectedService = services.find(s => s.id === booking.serviceType);
   const amount = selectedService?.price || 0;
 
-  const generateUPILink = () => {
+  const generateUPILink = (app?: string) => {
     const upiId = '7415379845@okbizaxis';
+    const payeeName = 'Medical Clinic';
     const transactionNote = `${selectedService?.name} - ${booking.name}`;
     const transactionId = `CLINIC_${Date.now()}`;
     
-    return `upi://pay?pa=${upiId}&pn=Medical Clinic&tn=${encodeURIComponent(transactionNote)}&am=${amount}&cu=INR&tid=${transactionId}`;
+    const params = `pa=${upiId}&pn=${encodeURIComponent(payeeName)}&tn=${encodeURIComponent(transactionNote)}&am=${amount}&cu=INR&tid=${transactionId}`;
+    
+    // For web/PWA compatibility, use intent URLs for specific apps
+    switch(app) {
+      case 'gpay':
+        // Google Pay intent URL for web
+        return `tez://upi/pay?${params}`;
+      case 'phonepe':
+        // PhonePe intent URL
+        return `phonepe://pay?${params}`;
+      case 'paytm':
+        // Paytm intent URL
+        return `paytmmp://upi/pay?${params}`;
+      default:
+        // Generic UPI intent - works with all UPI apps
+        return `upi://pay?${params}`;
+    }
+  };
+
+  const copyUPIId = () => {
+    navigator.clipboard.writeText('7415379845@okbizaxis');
+    toast({
+      title: "Copied!",
+      description: "UPI ID copied to clipboard",
+    });
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -890,23 +915,72 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                 </p>
                 {booking.paymentMethod === 'upi' && (
                   <div className="mt-3 space-y-3">
-                    <div className="p-3 bg-background rounded border">
-                      <p className="text-sm font-medium mb-2">UPI ID: 7415379845@okbizaxis</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        asChild
-                      >
-                        <a href={generateUPILink()} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Open UPI App
-                        </a>
-                      </Button>
+                    <div className="p-3 bg-background rounded border space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">UPI ID: 7415379845@okbizaxis</p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={copyUPIId}
+                          className="h-8 text-xs"
+                        >
+                          Copy
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Pay with your preferred app:</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            asChild
+                          >
+                            <a href={generateUPILink('gpay')} rel="noopener noreferrer">
+                              Google Pay
+                            </a>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            asChild
+                          >
+                            <a href={generateUPILink('phonepe')} rel="noopener noreferrer">
+                              PhonePe
+                            </a>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            asChild
+                          >
+                            <a href={generateUPILink('paytm')} rel="noopener noreferrer">
+                              Paytm
+                            </a>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            asChild
+                          >
+                            <a href={generateUPILink()} rel="noopener noreferrer">
+                              Other Apps
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      After making the payment, click "I've Paid" to confirm your appointment
+                      Click on your preferred UPI app to complete the payment. After successful payment, click "I've Paid" below.
                     </p>
                   </div>
                 )}
