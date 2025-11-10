@@ -35,6 +35,9 @@ const bookingSchema = z.object({
   attachments: z.array(z.instanceof(File)).max(5, "Maximum 5 files allowed").optional(),
 });
 
+// Get reCAPTCHA site key from environment or use test key as fallback
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+
 // Import background images
 import psychiatricBg from '@/assets/psychiatric-counselling-bg.jpg';
 import medicalCertificateBg from '@/assets/medical-certificate-bg.jpg';
@@ -279,6 +282,16 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   };
 
   const handlePaymentConfirmation = async () => {
+    // Validate payment screenshot for UPI payments
+    if (booking.paymentMethod === 'upi' && booking.attachments.length === 0) {
+      toast({
+        title: "Payment Screenshot Required",
+        description: "Please upload a screenshot of your UPI payment before confirming.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setPaymentConfirmed(true);
     setIsSubmitting(true);
 
@@ -837,7 +850,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       <div className="flex justify-center py-2">
         <ReCAPTCHA
           ref={recaptchaRef}
-          sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+          sitekey={RECAPTCHA_SITE_KEY}
           onChange={(token) => setCaptchaToken(token)}
           onExpired={() => setCaptchaToken(null)}
           size="compact"
@@ -846,6 +859,17 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       <p className="text-xs text-center text-muted-foreground -mt-2">
         Please verify you are human to continue
       </p>
+      {RECAPTCHA_SITE_KEY === "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" && (
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+          <p className="text-xs text-yellow-600 dark:text-yellow-500">
+            ⚠️ Using test reCAPTCHA key. Get your production key from{' '}
+            <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noopener noreferrer" className="underline">
+              Google reCAPTCHA
+            </a>
+            {' '}and add it as VITE_RECAPTCHA_SITE_KEY in your environment.
+          </p>
+        </div>
+      )}
 
       <div className="flex gap-3 pt-4">
         <Button type="submit" className="flex-1" variant="medical">
@@ -978,10 +1002,66 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                           </Button>
                         </div>
                       </div>
-                    </div>
+                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Click on your preferred UPI app to complete the payment. After successful payment, click "I've Paid" below.
+                      Click on your preferred UPI app to complete the payment. After successful payment, upload a screenshot below.
                     </p>
+
+                    {/* Payment Screenshot Upload - Required for UPI */}
+                    <div className="mt-4 p-3 border-2 border-primary/30 rounded-lg bg-primary/5 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Upload className="h-4 w-4 text-primary" />
+                        <h4 className="font-semibold text-sm">Upload Payment Screenshot *</h4>
+                      </div>
+                      <Input
+                        id="payment-screenshot"
+                        type="file"
+                        accept="image/jpeg,image/png,image/jpg,image/webp"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          
+                          if (files.length === 0) return;
+                          
+                          const file = files[0];
+                          
+                          if (file.size > 5242880) {
+                            toast({
+                              title: "File Too Large",
+                              description: `${file.name} exceeds 5MB limit`,
+                              variant: "destructive",
+                            });
+                            e.target.value = '';
+                            return;
+                          }
+                          
+                          setBooking({ ...booking, attachments: [file] });
+                          e.target.value = '';
+                        }}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Required: Upload a screenshot of your successful UPI payment (Max 5MB, JPG/PNG)
+                      </p>
+                      {booking.attachments.length > 0 && (
+                        <div className="mt-2">
+                          <div className="flex items-center gap-2 text-sm text-primary bg-background p-2 rounded border">
+                            <FileText className="h-4 w-4 flex-shrink-0" />
+                            <span className="flex-1 truncate">{booking.attachments[0].name}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setBooking({ ...booking, attachments: [] });
+                              }}
+                              className="h-6 px-2"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
