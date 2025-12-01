@@ -35,8 +35,8 @@ const bookingSchema = z.object({
   attachments: z.array(z.instanceof(File)).max(5, "Maximum 5 files allowed").optional(),
 });
 
-// Get reCAPTCHA site key from environment or use test key as fallback
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+// Get reCAPTCHA site key from environment
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 // Import background images
 import psychiatricBg from '@/assets/psychiatric-counselling-bg.jpg';
@@ -859,17 +859,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       <p className="text-xs text-center text-muted-foreground -mt-2">
         Please verify you are human to continue
       </p>
-      {RECAPTCHA_SITE_KEY === "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" && (
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
-          <p className="text-xs text-yellow-600 dark:text-yellow-500">
-            ⚠️ Using test reCAPTCHA key. Get your production key from{' '}
-            <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noopener noreferrer" className="underline">
-              Google reCAPTCHA
-            </a>
-            {' '}and add it as VITE_RECAPTCHA_SITE_KEY in your environment.
-          </p>
-        </div>
-      )}
 
       <div className="flex gap-3 pt-4">
         <Button type="submit" className="flex-1" variant="medical">
