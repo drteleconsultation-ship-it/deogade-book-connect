@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,13 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar as CalendarIcon, Clock, CheckCircle, CreditCard, ArrowLeft, ExternalLink, CheckCircle2, Upload, FileText } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
-import ReCAPTCHA from 'react-google-recaptcha';
 import confetti from 'canvas-confetti';
 import { Progress } from '@/components/ui/progress';
 
@@ -34,9 +34,6 @@ const bookingSchema = z.object({
   timeSlot: z.string().min(1, "Time slot is required"),
   attachments: z.array(z.instanceof(File)).max(5, "Maximum 5 files allowed").optional(),
 });
-
-// Get reCAPTCHA site key from environment
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 // Import background images
 import psychiatricBg from '@/assets/psychiatric-counselling-bg.jpg';
@@ -124,9 +121,8 @@ const generateTimeSlots = (consultationType: 'online' | 'clinic', selectedDate?:
 
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const { toast } = useToast();
-  const recaptchaRef = useRef<ReCAPTCHA>(null);
   const [currentStep, setCurrentStep] = useState<'form' | 'payment' | 'confirmation'>('form');
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [slotBookingCounts, setSlotBookingCounts] = useState<{ [key: string]: number }>({});
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -246,10 +242,10 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     e.preventDefault();
     
     // Check CAPTCHA verification
-    if (!captchaToken) {
+    if (!captchaVerified) {
       toast({
         title: "Verification Required",
-        description: "Please complete the CAPTCHA verification before proceeding.",
+        description: "Please confirm you are not a robot before proceeding.",
         variant: "destructive",
       });
       return;
@@ -404,8 +400,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         });
         setCurrentStep('form');
         setPaymentConfirmed(false);
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
+        setCaptchaVerified(false);
         
         onClose();
       }, 2000);
@@ -485,8 +480,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         });
         setCurrentStep('form');
         setPaymentConfirmed(false);
-        setCaptchaToken(null);
-        recaptchaRef.current?.reset();
+        setCaptchaVerified(false);
         
         onClose();
       }, 2000);
@@ -846,19 +840,20 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
         />
       </div>
 
-      {/* CAPTCHA Verification */}
-      <div className="flex justify-center py-2">
-        <ReCAPTCHA
-          ref={recaptchaRef}
-          sitekey={RECAPTCHA_SITE_KEY}
-          onChange={(token) => setCaptchaToken(token)}
-          onExpired={() => setCaptchaToken(null)}
-          size="compact"
+      {/* Human Verification */}
+      <div className="flex items-center space-x-2 p-4 border-2 border-primary/20 rounded-lg bg-primary/5">
+        <Checkbox 
+          id="captcha" 
+          checked={captchaVerified}
+          onCheckedChange={(checked) => setCaptchaVerified(checked === true)}
         />
+        <label
+          htmlFor="captcha"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+        >
+          I'm not a robot
+        </label>
       </div>
-      <p className="text-xs text-center text-muted-foreground -mt-2">
-        Please verify you are human to continue
-      </p>
 
       <div className="flex gap-3 pt-4">
         <Button type="submit" className="flex-1" variant="medical">
@@ -1191,8 +1186,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       paymentMethod: 'upi',
     });
     setPaymentConfirmed(false);
-    setCaptchaToken(null);
-    recaptchaRef.current?.reset();
+    setCaptchaVerified(false);
     onClose();
   };
 
