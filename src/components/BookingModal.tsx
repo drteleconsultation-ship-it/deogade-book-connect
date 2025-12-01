@@ -58,7 +58,8 @@ interface BookingData {
   serviceType: string;
   date: Date | undefined;
   timeSlot: string;
-  attachments: File[];
+  medicalDocuments: File[];
+  paymentScreenshot: File | null;
   paymentMethod: 'upi' | 'pay-later';
 }
 
@@ -137,7 +138,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     serviceType: '',
     date: undefined,
     timeSlot: '',
-    attachments: [],
+    medicalDocuments: [],
+    paymentScreenshot: null,
     paymentMethod: 'upi',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -279,7 +281,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
 
   const handlePaymentConfirmation = async () => {
     // Validate payment screenshot for UPI payments
-    if (booking.paymentMethod === 'upi' && booking.attachments.length === 0) {
+    if (booking.paymentMethod === 'upi' && !booking.paymentScreenshot) {
       toast({
         title: "Payment Screenshot Required",
         description: "Please upload a screenshot of your UPI payment before confirming.",
@@ -294,11 +296,17 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     try {
       const attachmentUrls: string[] = [];
       
+      // Combine medical documents and payment screenshot
+      const allFiles = [...booking.medicalDocuments];
+      if (booking.paymentScreenshot) {
+        allFiles.push(booking.paymentScreenshot);
+      }
+      
       // Upload files if selected
-      if (booking.attachments.length > 0) {
+      if (allFiles.length > 0) {
         setUploadingFile(true);
         
-        for (const file of booking.attachments) {
+        for (const file of allFiles) {
           const fileExt = file.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           const filePath = `${fileName}`;
@@ -395,7 +403,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           serviceType: '',
           date: undefined,
           timeSlot: '',
-          attachments: [],
+          medicalDocuments: [],
+          paymentScreenshot: null,
           paymentMethod: 'upi',
         });
         setCurrentStep('form');
@@ -475,7 +484,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           serviceType: '',
           date: undefined,
           timeSlot: '',
-          attachments: [],
+          medicalDocuments: [],
+          paymentScreenshot: null,
           paymentMethod: 'upi',
         });
         setCurrentStep('form');
@@ -766,7 +776,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
             onChange={(e) => {
               const files = Array.from(e.target.files || []);
               
-              if (booking.attachments.length + files.length > 5) {
+              if (booking.medicalDocuments.length + files.length > 5) {
                 toast({
                   title: "Too Many Files",
                   description: "Maximum 5 files allowed",
@@ -790,7 +800,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
               }
               
               if (validFiles.length > 0) {
-                setBooking({ ...booking, attachments: [...booking.attachments, ...validFiles] });
+                setBooking({ ...booking, medicalDocuments: [...booking.medicalDocuments, ...validFiles] });
               }
               e.target.value = '';
             }}
@@ -799,9 +809,9 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           <p className="text-xs text-muted-foreground">
             Optional: Upload up to 5 medical reports, prescriptions, or relevant images (Max 5MB each, JPG/PNG/PDF)
           </p>
-          {booking.attachments.length > 0 && (
+          {booking.medicalDocuments.length > 0 && (
             <div className="mt-2 space-y-2">
-              {booking.attachments.map((file, index) => (
+              {booking.medicalDocuments.map((file, index) => (
                 <div key={index} className="flex items-center gap-2 text-sm text-primary bg-background p-2 rounded border">
                   <FileText className="h-4 w-4 flex-shrink-0" />
                   <span className="flex-1 truncate">{file.name}</span>
@@ -810,8 +820,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      const newAttachments = booking.attachments.filter((_, i) => i !== index);
-                      setBooking({ ...booking, attachments: newAttachments });
+                      const newDocuments = booking.medicalDocuments.filter((_, i) => i !== index);
+                      setBooking({ ...booking, medicalDocuments: newDocuments });
                     }}
                     className="h-6 px-2"
                   >
@@ -820,7 +830,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                 </div>
               ))}
               <p className="text-xs text-muted-foreground">
-                {booking.attachments.length} / 5 files selected
+                {booking.medicalDocuments.length} / 5 files selected
               </p>
             </div>
           )}
@@ -1018,7 +1028,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                             return;
                           }
                           
-                          setBooking({ ...booking, attachments: [file] });
+                          setBooking({ ...booking, paymentScreenshot: file });
                           e.target.value = '';
                         }}
                         className="cursor-pointer"
@@ -1026,17 +1036,17 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                       <p className="text-xs text-muted-foreground">
                         Required: Upload a screenshot of your successful UPI payment (Max 5MB, JPG/PNG)
                       </p>
-                      {booking.attachments.length > 0 && (
+                      {booking.paymentScreenshot && (
                         <div className="mt-2">
                           <div className="flex items-center gap-2 text-sm text-primary bg-background p-2 rounded border">
                             <FileText className="h-4 w-4 flex-shrink-0" />
-                            <span className="flex-1 truncate">{booking.attachments[0].name}</span>
+                            <span className="flex-1 truncate">{booking.paymentScreenshot.name}</span>
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                setBooking({ ...booking, attachments: [] });
+                                setBooking({ ...booking, paymentScreenshot: null });
                               }}
                               className="h-6 px-2"
                             >
@@ -1182,7 +1192,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       serviceType: '',
       date: undefined,
       timeSlot: '',
-      attachments: [],
+      medicalDocuments: [],
+      paymentScreenshot: null,
       paymentMethod: 'upi',
     });
     setPaymentConfirmed(false);
