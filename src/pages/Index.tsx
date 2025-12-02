@@ -8,6 +8,7 @@ import ServicesSection from '@/components/ServicesSection';
 import MapSection from '@/components/MapSection';
 import BookingModal from '@/components/BookingModal';
 import FloatingButtons from '@/components/FloatingButtons';
+import InstallPrompt from '@/components/InstallPrompt';
 import { LanguageProvider } from '@/components/LanguageSelector';
 
 const Index = () => {
@@ -38,6 +39,7 @@ const Index = () => {
         />
         
         <FloatingButtons />
+        <InstallPrompt />
       </div>
     </LanguageProvider>
   );
