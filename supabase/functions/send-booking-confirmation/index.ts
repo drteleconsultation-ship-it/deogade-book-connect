@@ -303,18 +303,29 @@ const handler = async (req: Request): Promise<Response> => {
           if (!downloadError && fileData) {
             const arrayBuffer = await fileData.arrayBuffer();
             const buffer = new Uint8Array(arrayBuffer);
-            const base64Content = btoa(String.fromCharCode(...buffer));
+            
+            // Convert to base64 in chunks to avoid stack overflow
+            let base64Content = '';
+            const chunkSize = 8192;
+            for (let i = 0; i < buffer.length; i += chunkSize) {
+              const chunk = buffer.slice(i, Math.min(i + chunkSize, buffer.length));
+              base64Content += String.fromCharCode(...chunk);
+            }
+            base64Content = btoa(base64Content);
             
             attachments.push({
               filename: url.split('/').pop() || 'document',
               content: base64Content,
             });
+            console.log(`Attachment added: ${url.split('/').pop()}`);
           }
         } catch (err) {
           console.error(`Error downloading attachment ${url}:`, err);
         }
       }
     }
+    
+    console.log(`Total attachments prepared: ${attachments.length}`);
 
     let customerEmail;
     
