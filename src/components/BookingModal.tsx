@@ -947,58 +947,9 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                         </Button>
                       </div>
                       
-                      <div className="space-y-2">
-                        <p className="text-xs font-medium text-muted-foreground">Pay with your preferred app:</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            asChild
-                          >
-                            <a href={generateUPILink('gpay')} rel="noopener noreferrer">
-                              Google Pay
-                            </a>
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            asChild
-                          >
-                            <a href={generateUPILink('phonepe')} rel="noopener noreferrer">
-                              PhonePe
-                            </a>
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            asChild
-                          >
-                            <a href={generateUPILink('paytm')} rel="noopener noreferrer">
-                              Paytm
-                            </a>
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            asChild
-                          >
-                            <a href={generateUPILink()} rel="noopener noreferrer">
-                              Other Apps
-                            </a>
-                          </Button>
-                        </div>
-                      </div>
                      </div>
                     <p className="text-xs text-muted-foreground">
-                      Click on your preferred UPI app to complete the payment. After successful payment, upload a screenshot below.
+                      After successful payment, upload a screenshot below.
                     </p>
 
                     {/* Payment Screenshot Upload - Required for UPI */}
