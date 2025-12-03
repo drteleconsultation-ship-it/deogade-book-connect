@@ -297,19 +297,13 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     try {
       const attachmentUrls: string[] = [];
       
-      // Combine medical documents and payment screenshot
-      const allFiles = [...booking.medicalDocuments];
-      if (booking.paymentScreenshot) {
-        allFiles.push(booking.paymentScreenshot);
-      }
-      
-      // Upload files if selected
-      if (allFiles.length > 0) {
+      // Upload medical documents
+      if (booking.medicalDocuments.length > 0) {
         setUploadingFile(true);
         
-        for (const file of allFiles) {
+        for (const file of booking.medicalDocuments) {
           const fileExt = file.name.split('.').pop();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const fileName = `medical-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           const filePath = `${fileName}`;
 
           const { error: uploadError } = await supabase.storage
@@ -328,6 +322,32 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           }
         }
         
+        setUploadingFile(false);
+      }
+      
+      // Upload payment screenshot separately with identifiable prefix
+      let paymentScreenshotUrl: string | undefined;
+      if (booking.paymentScreenshot) {
+        setUploadingFile(true);
+        const file = booking.paymentScreenshot;
+        const fileExt = file.name.split('.').pop();
+        const fileName = `payment-screenshot-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('medical-documents')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          console.error('Payment screenshot upload error:', uploadError);
+          toast({
+            title: "Payment Screenshot Upload Failed",
+            description: "Could not upload payment screenshot.",
+            variant: "destructive",
+          });
+        } else {
+          paymentScreenshotUrl = fileName;
+          console.log('Payment screenshot uploaded:', fileName);
+        }
         setUploadingFile(false);
       }
 
@@ -375,6 +395,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           timeSlot: booking.timeSlot,
           paymentMethod: booking.paymentMethod,
           attachmentUrls: attachmentUrls,
+          paymentScreenshotUrl: paymentScreenshotUrl,
         },
       });
 
