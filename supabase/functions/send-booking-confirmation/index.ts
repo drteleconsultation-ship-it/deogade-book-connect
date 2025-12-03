@@ -27,6 +27,7 @@ interface BookingEmailRequest {
   timeSlot: string;
   paymentMethod?: string;
   attachmentUrls?: string[];
+  paymentScreenshotUrl?: string;
 }
 
 // Input validation and sanitization
@@ -293,7 +294,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Prepare attachments for email if any
     const attachments = [];
+    
+    // Process medical document attachments
     if (bookingData.attachmentUrls && bookingData.attachmentUrls.length > 0) {
+      console.log(`Processing ${bookingData.attachmentUrls.length} medical document(s)`);
       for (const url of bookingData.attachmentUrls) {
         try {
           const { data: fileData, error: downloadError } = await supabase.storage
@@ -314,14 +318,46 @@ const handler = async (req: Request): Promise<Response> => {
             base64Content = btoa(base64Content);
             
             attachments.push({
-              filename: url.split('/').pop() || 'document',
+              filename: url.split('/').pop() || 'medical-document',
               content: base64Content,
             });
-            console.log(`Attachment added: ${url.split('/').pop()}`);
+            console.log(`Medical document added: ${url.split('/').pop()}`);
           }
         } catch (err) {
-          console.error(`Error downloading attachment ${url}:`, err);
+          console.error(`Error downloading medical document ${url}:`, err);
         }
+      }
+    }
+    
+    // Process payment screenshot attachment
+    if (bookingData.paymentScreenshotUrl) {
+      console.log(`Processing payment screenshot: ${bookingData.paymentScreenshotUrl}`);
+      try {
+        const { data: fileData, error: downloadError } = await supabase.storage
+          .from('medical-documents')
+          .download(bookingData.paymentScreenshotUrl);
+        
+        if (!downloadError && fileData) {
+          const arrayBuffer = await fileData.arrayBuffer();
+          const buffer = new Uint8Array(arrayBuffer);
+          
+          // Convert to base64 in chunks to avoid stack overflow
+          let base64Content = '';
+          const chunkSize = 8192;
+          for (let i = 0; i < buffer.length; i += chunkSize) {
+            const chunk = buffer.slice(i, Math.min(i + chunkSize, buffer.length));
+            base64Content += String.fromCharCode(...chunk);
+          }
+          base64Content = btoa(base64Content);
+          
+          attachments.push({
+            filename: bookingData.paymentScreenshotUrl.split('/').pop() || 'payment-screenshot',
+            content: base64Content,
+          });
+          console.log(`Payment screenshot added: ${bookingData.paymentScreenshotUrl.split('/').pop()}`);
+        }
+      } catch (err) {
+        console.error(`Error downloading payment screenshot ${bookingData.paymentScreenshotUrl}:`, err);
       }
     }
     
