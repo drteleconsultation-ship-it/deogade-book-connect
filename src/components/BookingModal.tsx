@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -934,6 +935,27 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                 {booking.paymentMethod === 'upi' && (
                   <div className="mt-3 space-y-3">
                     <div className="p-3 bg-background rounded border space-y-3">
+                      {/* QR Code */}
+                      <div className="flex flex-col items-center gap-2">
+                        <p className="text-sm font-medium text-center">Scan QR Code to Pay</p>
+                        <div className="p-3 bg-white rounded-lg border">
+                          <QRCodeSVG 
+                            value={`upi://pay?pa=7415379845@okbizaxis&pn=Dr%20Teleconsultation&am=${amount}&cu=INR&tn=Consultation%20Fee`}
+                            size={160}
+                            level="H"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground text-center">
+                          Scan with any UPI app (GPay, PhonePe, Paytm, etc.)
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex-1 h-px bg-border"></div>
+                        <span>OR</span>
+                        <div className="flex-1 h-px bg-border"></div>
+                      </div>
+                      
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">UPI ID: 7415379845@okbizaxis</p>
                         <Button
@@ -946,8 +968,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                           Copy
                         </Button>
                       </div>
-                      
-                     </div>
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       After successful payment, upload a screenshot below.
                     </p>
