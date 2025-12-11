@@ -75,6 +75,7 @@ interface ServiceType {
 const services: ServiceType[] = [
   { id: 'general', name: 'General Physician', price: 150, description: 'Comprehensive general medical consultation', backgroundImage: generalPhysicianBg },
   { id: 'gynecology', name: 'Gynecology (Women\'s issues)', price: 200, description: 'Specialized women\'s health consultation', backgroundImage: gynecologyBg },
+  { id: 'dr_priyanka_gynecology', name: 'Consult Dr Priyanka (Gynecology)', price: 200, description: 'Personalized gynecology consultation with Dr. Priyanka', backgroundImage: gynecologyBg },
   { id: 'dermatology', name: 'Dermatology (Skin & Hair)', price: 200, description: 'Expert skin and hair care consultation', backgroundImage: dermatologyBg },
   { id: 'psychiatric', name: 'Psychiatric Counselling', price: 300, description: 'Professional mental health counseling', backgroundImage: psychiatricBg },
   { id: 'certificate', name: 'Medical / Fitness Certificate', price: 200, description: 'Official medical certificates', backgroundImage: medicalCertificateBg },
