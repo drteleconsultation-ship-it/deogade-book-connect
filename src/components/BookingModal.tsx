@@ -1005,7 +1005,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                         id="payment-screenshot"
                         type="file"
                         accept="image/*"
-                        capture="environment"
                         onChange={(e) => {
                           const files = Array.from(e.target.files || []);
                           
