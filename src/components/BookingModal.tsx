@@ -1001,10 +1001,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                         <Upload className="h-4 w-4 text-primary" />
                         <h4 className="font-semibold text-sm">Upload Payment Screenshot *</h4>
                       </div>
-                      <Input
+                      <input
                         id="payment-screenshot"
                         type="file"
-                        accept="image/jpeg,image/png,image/jpg,image/webp"
+                        accept="image/*"
+                        capture="environment"
                         onChange={(e) => {
                           const files = Array.from(e.target.files || []);
                           
@@ -1023,9 +1024,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                           }
                           
                           setBooking({ ...booking, paymentScreenshot: file });
-                          e.target.value = '';
                         }}
-                        className="cursor-pointer"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                       />
                       <p className="text-xs text-muted-foreground">
                         Required: Upload a screenshot of your successful UPI payment (Max 5MB, JPG/PNG)
