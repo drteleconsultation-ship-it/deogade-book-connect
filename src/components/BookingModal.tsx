@@ -1001,53 +1001,82 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                         <Upload className="h-4 w-4 text-primary" />
                         <h4 className="font-semibold text-sm">Upload Payment Screenshot *</h4>
                       </div>
-                      <input
-                        id="payment-screenshot"
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          
-                          if (files.length === 0) return;
-                          
-                          const file = files[0];
-                          
-                          if (file.size > 5242880) {
-                            toast({
-                              title: "File Too Large",
-                              description: `${file.name} exceeds 5MB limit`,
-                              variant: "destructive",
-                            });
-                            e.target.value = '';
-                            return;
-                          }
-                          
-                          setBooking({ ...booking, paymentScreenshot: file });
-                        }}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Required: Upload a screenshot of your successful UPI payment (Max 5MB, JPG/PNG)
-                      </p>
-                      {booking.paymentScreenshot && (
-                        <div className="mt-2">
-                          <div className="flex items-center gap-2 text-sm text-primary bg-background p-2 rounded border">
-                            <FileText className="h-4 w-4 flex-shrink-0" />
-                            <span className="flex-1 truncate">{booking.paymentScreenshot.name}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setBooking({ ...booking, paymentScreenshot: null });
-                              }}
-                              className="h-6 px-2"
-                            >
-                              Remove
-                            </Button>
+                      
+                      {!booking.paymentScreenshot ? (
+                        <label 
+                          htmlFor="payment-screenshot"
+                          className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-primary/40 rounded-lg cursor-pointer bg-background hover:bg-accent/50 transition-colors"
+                        >
+                          <div className="flex flex-col items-center justify-center pt-2 pb-2">
+                            <Upload className="w-6 h-6 mb-2 text-primary" />
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-semibold text-primary">Tap to upload</span>
+                            </p>
+                            <p className="text-xs text-muted-foreground">from gallery or camera</p>
                           </div>
+                          <input
+                            id="payment-screenshot"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              try {
+                                const file = e.target.files?.[0];
+                                
+                                if (!file) {
+                                  console.log('No file selected');
+                                  return;
+                                }
+                                
+                                console.log('File selected:', file.name, file.size, file.type);
+                                
+                                if (file.size > 5242880) {
+                                  toast({
+                                    title: "File Too Large",
+                                    description: `${file.name} exceeds 5MB limit`,
+                                    variant: "destructive",
+                                  });
+                                  e.target.value = '';
+                                  return;
+                                }
+                                
+                                setBooking(prev => ({ ...prev, paymentScreenshot: file }));
+                                toast({
+                                  title: "Screenshot Added",
+                                  description: "Payment screenshot uploaded successfully",
+                                });
+                              } catch (error) {
+                                console.error('File upload error:', error);
+                                toast({
+                                  title: "Upload Failed",
+                                  description: "Could not upload file. Please try again.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          />
+                        </label>
+                      ) : (
+                        <div className="flex items-center gap-2 text-sm text-primary bg-background p-3 rounded-lg border border-primary/30">
+                          <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-green-600" />
+                          <span className="flex-1 truncate font-medium">{booking.paymentScreenshot.name}</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setBooking(prev => ({ ...prev, paymentScreenshot: null }));
+                            }}
+                            className="h-7 px-2 text-xs"
+                          >
+                            Change
+                          </Button>
                         </div>
                       )}
+                      
+                      <p className="text-xs text-muted-foreground">
+                        Required: Screenshot of successful UPI payment (Max 5MB)
+                      </p>
                     </div>
                   </div>
                 )}
