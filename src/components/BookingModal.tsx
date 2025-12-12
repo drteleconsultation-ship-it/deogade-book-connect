@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -148,7 +148,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [timePopoverOpen, setTimePopoverOpen] = useState(false);
-  const paymentScreenshotInputRef = useRef<HTMLInputElement>(null);
+  
 
   // Fetch booked slots count when date changes
   useEffect(() => {
@@ -1003,56 +1003,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                         <h4 className="font-semibold text-sm">Upload Payment Screenshot *</h4>
                       </div>
                       
-                      <input
-                        ref={paymentScreenshotInputRef}
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={(e) => {
-                          try {
-                            const file = e.target.files?.[0];
-                            
-                            if (!file) {
-                              console.log('No file selected');
-                              return;
-                            }
-                            
-                            console.log('File selected:', file.name, file.size, file.type);
-                            
-                            if (file.size > 5242880) {
-                              toast({
-                                title: "File Too Large",
-                                description: `${file.name} exceeds 5MB limit`,
-                                variant: "destructive",
-                              });
-                              if (paymentScreenshotInputRef.current) {
-                                paymentScreenshotInputRef.current.value = '';
-                              }
-                              return;
-                            }
-                            
-                            setBooking(prev => ({ ...prev, paymentScreenshot: file }));
-                            toast({
-                              title: "Screenshot Added",
-                              description: "Payment screenshot uploaded successfully",
-                            });
-                          } catch (error) {
-                            console.error('File upload error:', error);
-                            toast({
-                              title: "Upload Failed",
-                              description: "Could not upload file. Please try again.",
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                      />
-                      
                       {!booking.paymentScreenshot ? (
-                        <button
-                          type="button"
-                          onClick={() => paymentScreenshotInputRef.current?.click()}
-                          className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-primary/40 rounded-lg cursor-pointer bg-background hover:bg-accent/50 transition-colors"
-                        >
+                        <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-primary/40 rounded-lg cursor-pointer bg-background hover:bg-accent/50 transition-colors">
                           <div className="flex flex-col items-center justify-center pt-2 pb-2">
                             <Upload className="w-6 h-6 mb-2 text-primary" />
                             <p className="text-sm text-muted-foreground">
@@ -1060,7 +1012,35 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
                             </p>
                             <p className="text-xs text-muted-foreground">from gallery or camera</p>
                           </div>
-                        </button>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/jpg,image/gif,image/webp,image/heic,image/heif"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              
+                              console.log('Payment screenshot selected:', file.name, file.size, file.type);
+                              
+                              if (file.size > 5242880) {
+                                toast({
+                                  title: "File Too Large",
+                                  description: `${file.name} exceeds 5MB limit`,
+                                  variant: "destructive",
+                                });
+                                e.target.value = '';
+                                return;
+                              }
+                              
+                              setBooking(prev => ({ ...prev, paymentScreenshot: file }));
+                              toast({
+                                title: "Screenshot Added",
+                                description: "Payment screenshot uploaded successfully",
+                              });
+                              e.target.value = '';
+                            }}
+                          />
+                        </label>
                       ) : (
                         <div className="flex items-center gap-2 text-sm text-primary bg-background p-3 rounded-lg border border-primary/30">
                           <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-green-600" />
