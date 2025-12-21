@@ -21,6 +21,7 @@ interface BookingEmailRequest {
   email?: string;
   reason: string;
   consultationType: 'online' | 'clinic';
+  consultationMode?: 'chat' | 'audio';
   serviceName: string;
   serviceCharge: number;
   date: string;
@@ -138,6 +139,8 @@ const handler = async (req: Request): Promise<Response> => {
       ? 'Pay when consultation starts with doctor' 
       : 'UPI Payment (Completed)';
     
+    const consultationModeText = bookingData.consultationMode === 'audio' ? 'Audio Call' : 'Chat';
+    
     console.log("Processing booking confirmation - Service:", bookingData.serviceName);
 
     // Email content for customer
@@ -185,6 +188,12 @@ const handler = async (req: Request): Promise<Response> => {
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Consultation Type:</td>
                 <td style="padding: 8px 0; color: #111827; text-transform: capitalize;">${bookingData.consultationType === 'online' ? 'Online Consultation' : 'In-Clinic Visit'}</td>
               </tr>
+              ${bookingData.consultationType === 'online' && bookingData.consultationMode ? `
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Mode of Consultation:</td>
+                <td style="padding: 8px 0; color: #111827; font-weight: 500;">${consultationModeText}</td>
+              </tr>
+              ` : ''}
               <tr>
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Date:</td>
                 <td style="padding: 8px 0; color: #111827;">${bookingData.date}</td>
@@ -265,6 +274,12 @@ const handler = async (req: Request): Promise<Response> => {
               <td style="padding: 8px 0; color: #6b7280;">Consultation Type:</td>
               <td style="padding: 8px 0; color: #111827; text-transform: capitalize;">${bookingData.consultationType === 'online' ? 'Online Consultation' : 'In-Clinic Visit'}</td>
             </tr>
+            ${bookingData.consultationType === 'online' && bookingData.consultationMode ? `
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Mode of Consultation:</td>
+              <td style="padding: 8px 0; color: #111827; font-weight: 500;">${consultationModeText}</td>
+            </tr>
+            ` : ''}
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Date:</td>
               <td style="padding: 8px 0; color: #111827;">${bookingData.date}</td>

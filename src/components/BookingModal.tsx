@@ -56,6 +56,7 @@ interface BookingData {
   email: string;
   reason: string;
   consultationType: 'online' | 'clinic';
+  consultationMode: 'chat' | 'audio';
   serviceType: string;
   date: Date | undefined;
   timeSlot: string;
@@ -137,6 +138,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     email: '',
     reason: '',
     consultationType: 'clinic',
+    consultationMode: 'chat',
     serviceType: '',
     date: undefined,
     timeSlot: '',
@@ -391,6 +393,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           email: booking.email,
           reason: booking.reason,
           consultationType: booking.consultationType,
+          consultationMode: booking.consultationType === 'online' ? booking.consultationMode : undefined,
           serviceName: selectedService?.name || '',
           serviceCharge: selectedService?.price || 0,
           date: format(booking.date!, 'PPP'),
@@ -424,6 +427,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           email: '',
           reason: '',
           consultationType: 'clinic',
+          consultationMode: 'chat',
           serviceType: '',
           date: undefined,
           timeSlot: '',
@@ -505,6 +509,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           email: '',
           reason: '',
           consultationType: 'clinic',
+          consultationMode: 'chat',
           serviceType: '',
           date: undefined,
           timeSlot: '',
@@ -595,6 +600,30 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           </div>
         </RadioGroup>
       </div>
+
+      {/* Mode of Consultation - Only show for online consultations */}
+      {booking.consultationType === 'online' && (
+        <div className="space-y-2">
+          <Label className="text-base font-semibold">Mode of Consultation *</Label>
+          <Select
+            value={booking.consultationMode}
+            onValueChange={(value: 'chat' | 'audio') => 
+              setBooking({ ...booking, consultationMode: value })
+            }
+          >
+            <SelectTrigger className="bg-background">
+              <SelectValue placeholder="Select consultation mode" />
+            </SelectTrigger>
+            <SelectContent className="bg-background z-50">
+              <SelectItem value="chat">Chat</SelectItem>
+              <SelectItem value="audio">Audio Call</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Choose how you'd like to connect with the doctor
+          </p>
+        </div>
+      )}
 
       {/* Personal Information */}
       <div className="grid md:grid-cols-2 gap-4">
@@ -1196,6 +1225,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       email: '',
       reason: '',
       consultationType: 'clinic',
+      consultationMode: 'chat',
       serviceType: '',
       date: undefined,
       timeSlot: '',
