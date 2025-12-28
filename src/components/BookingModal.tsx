@@ -63,6 +63,7 @@ interface BookingData {
   medicalDocuments: File[];
   paymentScreenshot: File | null;
   paymentMethod: 'upi' | 'pay-later';
+  suggestions: string;
 }
 
 interface ServiceType {
@@ -145,6 +146,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
     medicalDocuments: [],
     paymentScreenshot: null,
     paymentMethod: 'upi',
+    suggestions: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
@@ -401,6 +403,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           paymentMethod: booking.paymentMethod,
           attachmentUrls: attachmentUrls,
           paymentScreenshotUrl: paymentScreenshotUrl,
+          suggestions: booking.suggestions || undefined,
         },
       });
 
@@ -434,6 +437,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           medicalDocuments: [],
           paymentScreenshot: null,
           paymentMethod: 'upi',
+          suggestions: '',
         });
         setCurrentStep('form');
         setPaymentConfirmed(false);
@@ -516,6 +520,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           medicalDocuments: [],
           paymentScreenshot: null,
           paymentMethod: 'upi',
+          suggestions: '',
         });
         setCurrentStep('form');
         setPaymentConfirmed(false);
@@ -1112,6 +1117,22 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
           </RadioGroup>
         </div>
 
+        {/* Suggestions/Notes Section */}
+        <div className="space-y-3">
+          <Label htmlFor="suggestions" className="text-base font-semibold">Any Suggestions or Notes (Optional)</Label>
+          <Textarea
+            id="suggestions"
+            value={booking.suggestions}
+            onChange={(e) => setBooking({ ...booking, suggestions: e.target.value })}
+            placeholder="Any special requests, preferences, or additional information you'd like to share..."
+            rows={3}
+            maxLength={500}
+          />
+          <p className="text-xs text-muted-foreground">
+            {booking.suggestions.length}/500 characters
+          </p>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex gap-3 pt-4">
           <Button
@@ -1232,6 +1253,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose }) => {
       medicalDocuments: [],
       paymentScreenshot: null,
       paymentMethod: 'upi',
+      suggestions: '',
     });
     setPaymentConfirmed(false);
     setCaptchaVerified(false);

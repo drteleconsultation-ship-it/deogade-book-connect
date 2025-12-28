@@ -29,6 +29,7 @@ interface BookingEmailRequest {
   paymentMethod?: string;
   attachmentUrls?: string[];
   paymentScreenshotUrl?: string;
+  suggestions?: string;
 }
 
 // Input validation and sanitization
@@ -140,6 +141,7 @@ const handler = async (req: Request): Promise<Response> => {
       : 'UPI Payment (Completed)';
     
     const consultationModeText = bookingData.consultationMode === 'audio' ? 'Audio Call' : 'Chat';
+    const sanitizedSuggestions = bookingData.suggestions ? sanitizeHtml(bookingData.suggestions) : '';
     
     console.log("Processing booking confirmation - Service:", bookingData.serviceName);
 
@@ -216,6 +218,12 @@ const handler = async (req: Request): Promise<Response> => {
                 <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Reason:</td>
                 <td style="padding: 8px 0; color: #111827;">${sanitizedReason}</td>
               </tr>
+              ${sanitizedSuggestions ? `
+              <tr>
+                <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Patient Notes:</td>
+                <td style="padding: 8px 0; color: #111827;">${sanitizedSuggestions}</td>
+              </tr>
+              ` : ''}
             </table>
           </div>
 
@@ -302,6 +310,12 @@ const handler = async (req: Request): Promise<Response> => {
               <td style="padding: 8px 0; color: #6b7280;">Reason for Visit:</td>
               <td style="padding: 8px 0; color: #111827;">${sanitizedReason}</td>
             </tr>
+            ${sanitizedSuggestions ? `
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Patient Notes/Suggestions:</td>
+              <td style="padding: 8px 0; color: #111827;">${sanitizedSuggestions}</td>
+            </tr>
+            ` : ''}
           </table>
         </div>
       </div>
