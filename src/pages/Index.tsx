@@ -10,6 +10,8 @@ import BookingModal from '@/components/BookingModal';
 import FloatingButtons from '@/components/FloatingButtons';
 import InstallPrompt from '@/components/InstallPrompt';
 import PageLoader from '@/components/PageLoader';
+import SocialShareButtons from '@/components/SocialShareButtons';
+import ScrollToTop from '@/components/ScrollToTop';
 import { LanguageProvider } from '@/components/LanguageSelector';
 
 const Index = () => {
@@ -76,6 +78,8 @@ const Index = () => {
         
         <FloatingButtons />
         <InstallPrompt />
+        <SocialShareButtons />
+        <ScrollToTop />
       </div>
     </LanguageProvider>
   );
