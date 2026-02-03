@@ -43,6 +43,7 @@ export type Database = {
           age: string
           appointment_date: string
           attachment_urls: string[] | null
+          consultation_mode: string | null
           consultation_type: string
           created_at: string
           email: string | null
@@ -53,6 +54,7 @@ export type Database = {
           reason: string
           service_type: string
           status: string
+          suggestions: string | null
           time_slot: string
           updated_at: string
           whatsapp: string
@@ -61,6 +63,7 @@ export type Database = {
           age: string
           appointment_date: string
           attachment_urls?: string[] | null
+          consultation_mode?: string | null
           consultation_type: string
           created_at?: string
           email?: string | null
@@ -71,6 +74,7 @@ export type Database = {
           reason: string
           service_type: string
           status?: string
+          suggestions?: string | null
           time_slot: string
           updated_at?: string
           whatsapp: string
@@ -79,6 +83,7 @@ export type Database = {
           age?: string
           appointment_date?: string
           attachment_urls?: string[] | null
+          consultation_mode?: string | null
           consultation_type?: string
           created_at?: string
           email?: string | null
@@ -89,6 +94,7 @@ export type Database = {
           reason?: string
           service_type?: string
           status?: string
+          suggestions?: string | null
           time_slot?: string
           updated_at?: string
           whatsapp?: string
@@ -119,6 +125,33 @@ export type Database = {
           identifier?: string
           request_count?: number | null
           window_start?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

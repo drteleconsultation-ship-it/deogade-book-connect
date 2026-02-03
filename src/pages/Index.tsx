@@ -9,10 +9,12 @@ import MapSection from '@/components/MapSection';
 import BookingModal from '@/components/BookingModal';
 import FloatingButtons from '@/components/FloatingButtons';
 import InstallPrompt from '@/components/InstallPrompt';
+import PageLoader from '@/components/PageLoader';
 import { LanguageProvider } from '@/components/LanguageSelector';
 
 const Index = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -22,9 +24,43 @@ const Index = () => {
     }
   }, []);
 
+  useEffect(() => {
+    // Minimum display time for loader (prevents flash)
+    const minLoadTime = 800;
+    const maxLoadTime = 3000;
+    const startTime = Date.now();
+
+    const hideLoader = () => {
+      const elapsed = Date.now() - startTime;
+      const remainingTime = Math.max(0, minLoadTime - elapsed);
+      
+      setTimeout(() => {
+        setIsLoading(false);
+      }, remainingTime);
+    };
+
+    // Hide loader when window fully loads or after max time
+    if (document.readyState === 'complete') {
+      hideLoader();
+    } else {
+      window.addEventListener('load', hideLoader);
+    }
+
+    // Force hide after max time
+    const maxTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, maxLoadTime);
+
+    return () => {
+      window.removeEventListener('load', hideLoader);
+      clearTimeout(maxTimeout);
+    };
+  }, []);
+
   return (
     <LanguageProvider>
-      <div className="min-h-screen bg-background">
+      <PageLoader isVisible={isLoading} />
+      <div className={`min-h-screen bg-background transition-opacity duration-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
         <Header />
         <HeroSection onBookingClick={() => setIsBookingOpen(true)} />
         <MissionSection />
