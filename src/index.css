@@ -113,3 +113,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Page Loader Animations */
+@layer utilities {
+  .animate-fade-in-up-delayed {
+    opacity: 0;
+  }
+}
