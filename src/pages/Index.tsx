@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import MissionSection from '@/components/MissionSection';
@@ -13,10 +13,36 @@ import PageLoader from '@/components/PageLoader';
 import SocialShareButtons from '@/components/SocialShareButtons';
 import ScrollToTop from '@/components/ScrollToTop';
 import { LanguageProvider } from '@/components/LanguageSelector';
+import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts';
 
 const Index = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Keyboard shortcut handlers
+  const scrollToSection = useCallback((sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, []);
+
+  const handleHome = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleBooking = useCallback(() => {
+    setIsBookingOpen(true);
+  }, []);
+
+  // Initialize keyboard shortcuts
+  useKeyboardShortcuts({
+    onBooking: handleBooking,
+    onHome: handleHome,
+    onServices: () => scrollToSection('services'),
+    onAbout: () => scrollToSection('about'),
+    onContact: () => scrollToSection('contact'),
+  });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
