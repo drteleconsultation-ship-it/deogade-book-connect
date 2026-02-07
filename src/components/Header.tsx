@@ -3,6 +3,7 @@ import logoImage from '@/assets/logo-new.jpg';
 import doctorPhoto from '@/assets/doctor-photo.jpg';
 import LanguageSelector from '@/components/LanguageSelector';
 import ThemeToggle from '@/components/ThemeToggle';
+import ClinicStatusBadge from '@/components/ClinicStatusBadge';
 
 const Header: React.FC = () => {
   return (
@@ -23,6 +24,7 @@ const Header: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-3">
+            <ClinicStatusBadge />
             <ThemeToggle />
             <LanguageSelector />
           </div>
