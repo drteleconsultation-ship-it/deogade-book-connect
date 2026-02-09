@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { IndianRupee, UserCheck, Heart, Sparkles, Brain, FileText } from 'lucide-react';
 import { useLanguage } from '@/components/LanguageSelector';
+import ScrollAnimationWrapper from '@/components/ScrollAnimationWrapper';
 
 // Import background images
 import psychiatricBg from '@/assets/psychiatric-counselling-bg.jpg';
@@ -67,19 +68,21 @@ const ChargesSection: React.FC = () => {
     <section className="py-20 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">
-              {t('charges.title')}
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Transparent and affordable pricing for quality healthcare services
-            </p>
-          </div>
+          <ScrollAnimationWrapper variant="fade-up">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">
+                {t('charges.title')}
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                Transparent and affordable pricing for quality healthcare services
+              </p>
+            </div>
+          </ScrollAnimationWrapper>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {charges.map((charge, index) => (
+              <ScrollAnimationWrapper key={index} variant="fade-up" delay={index * 100}>
               <Card 
-                key={index} 
                 className="shadow-card border-none hover:shadow-medical transition-all duration-300 hover:-translate-y-1 relative overflow-hidden"
               >
                 {charge.backgroundImage && (
@@ -109,6 +112,7 @@ const ChargesSection: React.FC = () => {
                   </CardContent>
                 </div>
               </Card>
+              </ScrollAnimationWrapper>
             ))}
           </div>
 

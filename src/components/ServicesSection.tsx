@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Monitor, Stethoscope, Clock, Shield, Heart, UserCheck } from 'lucide-react';
 import { useLanguage } from '@/components/LanguageSelector';
+import ScrollAnimationWrapper from '@/components/ScrollAnimationWrapper';
 
 const ServicesSection: React.FC = () => {
   const { t } = useLanguage();
@@ -48,39 +49,43 @@ const ServicesSection: React.FC = () => {
     <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">
-              {t('services.title')}
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Comprehensive healthcare solutions designed to meet your medical needs 
-              with convenience and professional excellence.
-            </p>
-          </div>
+          <ScrollAnimationWrapper variant="fade-up">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">
+                {t('services.title')}
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                Comprehensive healthcare solutions designed to meet your medical needs 
+                with convenience and professional excellence.
+              </p>
+            </div>
+          </ScrollAnimationWrapper>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {services.map((service, index) => (
-              <Card key={index} className="shadow-card border-none hover:shadow-medical transition-all duration-300 hover:-translate-y-1">
-                <CardHeader className="text-center pb-4">
-                  <div className="bg-medical-gradient p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <service.icon className="h-8 w-8 text-white" />
-                  </div>
-                  <CardTitle className="text-xl text-primary">{service.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-muted-foreground mb-4 leading-relaxed">
-                    {service.description}
-                  </p>
-                  <ul className="space-y-2">
-                    {service.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="text-sm text-foreground flex items-center justify-center gap-2">
-                        <div className="w-1.5 h-1.5 bg-medical-blue rounded-full flex-shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+              <ScrollAnimationWrapper key={index} variant="fade-up" delay={index * 100}>
+                <Card className="shadow-card border-none hover:shadow-medical transition-all duration-300 hover:-translate-y-1 h-full">
+                  <CardHeader className="text-center pb-4">
+                    <div className="bg-medical-gradient p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                      <service.icon className="h-8 w-8 text-white" />
+                    </div>
+                    <CardTitle className="text-xl text-primary">{service.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <p className="text-muted-foreground mb-4 leading-relaxed">
+                      {service.description}
+                    </p>
+                    <ul className="space-y-2">
+                      {service.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="text-sm text-foreground flex items-center justify-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-medical-blue rounded-full flex-shrink-0" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </ScrollAnimationWrapper>
             ))}
           </div>
         </div>
