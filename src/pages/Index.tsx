@@ -13,12 +13,17 @@ import PageLoader from '@/components/PageLoader';
 import SocialShareButtons from '@/components/SocialShareButtons';
 import ScrollToTop from '@/components/ScrollToTop';
 import StatsCounter from '@/components/StatsCounter';
+import AnalyticsSection from '@/components/AnalyticsSection';
 import { LanguageProvider } from '@/components/LanguageSelector';
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts';
+import useVisitorTracking from '@/hooks/useVisitorTracking';
 
 const Index = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Track visitor
+  useVisitorTracking();
 
   // Keyboard shortcut handlers
   const scrollToSection = useCallback((sectionId: string) => {
@@ -98,6 +103,7 @@ const Index = () => {
         <AboutSection />
         <ServicesSection />
         <MapSection />
+        <AnalyticsSection />
         
         <BookingModal 
           isOpen={isBookingOpen} 
