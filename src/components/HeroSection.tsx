@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, MapPin, Phone } from 'lucide-react';
 import heroImage from '@/assets/clinic-hero.jpg';
@@ -11,15 +11,31 @@ interface HeroSectionProps {
 
 const HeroSection: React.FC<HeroSectionProps> = ({ onBookingClick }) => {
   const { t } = useLanguage();
+  const [scrollY, setScrollY] = useState(0);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (sectionRef.current) {
+        const rect = sectionRef.current.getBoundingClientRect();
+        if (rect.bottom > 0) {
+          setScrollY(window.scrollY);
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      {/* Background Image with Overlay */}
+    <section ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+      {/* Background Image with Parallax */}
       <div className="absolute inset-0 z-0">
         <img 
           src={heroImage} 
           alt="Dr. Deogade Clinic - Professional Medical Care" 
-          className="w-full h-full object-cover"
+          className="w-full h-[120%] object-cover"
+          style={{ transform: `translateY(${scrollY * -0.3}px)` }}
         />
         <div className="absolute inset-0 bg-hero-gradient opacity-85" />
       </div>
