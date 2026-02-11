@@ -12,6 +12,7 @@ import InstallPrompt from '@/components/InstallPrompt';
 import PageLoader from '@/components/PageLoader';
 import SocialShareButtons from '@/components/SocialShareButtons';
 import ScrollToTop from '@/components/ScrollToTop';
+import StatsCounter from '@/components/StatsCounter';
 import { LanguageProvider } from '@/components/LanguageSelector';
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts';
 
@@ -92,6 +93,7 @@ const Index = () => {
         <Header />
         <HeroSection onBookingClick={() => setIsBookingOpen(true)} />
         <MissionSection />
+        <StatsCounter />
         <ChargesSection />
         <AboutSection />
         <ServicesSection />
