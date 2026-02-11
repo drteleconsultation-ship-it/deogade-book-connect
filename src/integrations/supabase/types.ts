@@ -128,6 +128,36 @@ export type Database = {
         }
         Relationships: []
       }
+      page_visits: {
+        Row: {
+          country_code: string | null
+          country_name: string | null
+          id: string
+          page_path: string
+          session_id: string | null
+          user_agent: string | null
+          visited_at: string
+        }
+        Insert: {
+          country_code?: string | null
+          country_name?: string | null
+          id?: string
+          page_path?: string
+          session_id?: string | null
+          user_agent?: string | null
+          visited_at?: string
+        }
+        Update: {
+          country_code?: string | null
+          country_name?: string | null
+          id?: string
+          page_path?: string
+          session_id?: string | null
+          user_agent?: string | null
+          visited_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
