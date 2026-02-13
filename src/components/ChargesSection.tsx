@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { IndianRupee, UserCheck, Heart, Sparkles, Brain, FileText } from 'lucide-react';
 import { useLanguage } from '@/components/LanguageSelector';
@@ -13,6 +13,16 @@ import dermatologyBg from '@/assets/dermatology-bg.jpg';
 
 const ChargesSection: React.FC = () => {
   const { t } = useLanguage();
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const charges = [
     {
       icon: UserCheck,
@@ -87,9 +97,10 @@ const ChargesSection: React.FC = () => {
               >
                 {charge.backgroundImage && (
                   <div 
-                    className="absolute inset-0 bg-cover bg-center opacity-10"
+                    className="absolute inset-0 bg-cover bg-center opacity-10 h-[130%]"
                     style={{
-                      backgroundImage: `url(${charge.backgroundImage})`
+                      backgroundImage: `url(${charge.backgroundImage})`,
+                      transform: `translateY(${scrollY * -0.05}px)`
                     }}
                   />
                 )}
